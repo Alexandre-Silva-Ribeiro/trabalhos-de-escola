@@ -1,0 +1,35 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  fill="none"
+  role="img"
+  aria-labelledby="title"
+>
+  <title>Perfil estilizado de Enedina Alves Marques</title>
+  <path
+    d="M21 25.5C21 17.4 25.9 11 32 11C38.1 11 43 17.4 43 25.5C43 32.4 38.1 37 32 37C25.9 37 21 32.4 21 25.5Z"
+    stroke="#2A2C2A"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M13 55C15.3 45.8 22.8 40.4 32 40.4C41.2 40.4 48.7 45.8 51 55"
+    stroke="#2A2C2A"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M37.8 13.5C41.6 15.4 44.5 20 44.5 25.8"
+    stroke="#2A2C2A"
+    stroke-width="1.8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M19.5 55H44.5"
+    stroke="#2A2C2A"
+    stroke-width="1.8"
+    stroke-linecap="round"
+  />
+</svg>
