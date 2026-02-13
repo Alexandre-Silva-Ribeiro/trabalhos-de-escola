@@ -171,13 +171,20 @@ export default function App() {
   useEffect(() => {
     async function loadBiography() {
       try {
-        const response = await fetch("/api/biography");
-        if (!response.ok) {
+        const apiResponse = await fetch("/api/biography");
+        if (apiResponse.ok) {
+          const apiData: Biography = await apiResponse.json();
+          setBiography(apiData);
+          return;
+        }
+
+        const staticResponse = await fetch(`${import.meta.env.BASE_URL}biography.json`);
+        if (!staticResponse.ok) {
           throw new Error("Nao foi possivel carregar a biografia.");
         }
 
-        const data: Biography = await response.json();
-        setBiography(data);
+        const staticData: Biography = await staticResponse.json();
+        setBiography(staticData);
       } catch (loadError) {
         const message =
           loadError instanceof Error ? loadError.message : "Erro inesperado.";
