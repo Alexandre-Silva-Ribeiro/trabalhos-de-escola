@@ -5,6 +5,15 @@ Projeto full stack minimalista com:
 - Frontend: React + TypeScript + Vite + CSS puro
 - Backend: Node.js + Express
 
+## Estrutura do repositorio
+
+O deploy e a execucao usam as pastas da raiz do repositorio:
+
+- `frontend/`
+- `backend/`
+
+Se existir uma pasta local `Biografia/` dentro do seu computador, ela nao e usada no deploy do GitHub Pages.
+
 ## Como rodar
 
 1. Instale dependencias na raiz:
