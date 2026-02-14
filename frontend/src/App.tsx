@@ -256,43 +256,88 @@ function isAutoplayLockError(error: unknown) {
   );
 }
 
-async function waitForBrowserVoices(
-  synthesis: SpeechSynthesis,
-  timeoutMs = 2200
-): Promise<SpeechSynthesisVoice[]> {
-  const initialVoices = synthesis.getVoices();
-  if (initialVoices.length > 0) {
-    return initialVoices;
+interface BrowserVoiceProfile {
+  key: string;
+  label: string;
+  voice: SpeechSynthesisVoice | null;
+  lang: string | null;
+}
+
+type BrowserChunkResult = {
+  status: "ended" | "not_started" | "failed";
+  errorCode: string;
+};
+
+function buildBrowserVoiceProfiles(
+  voices: SpeechSynthesisVoice[],
+  settingsSnapshot: { browserVoiceURI: string | null; languageCode: string }
+): BrowserVoiceProfile[] {
+  const profiles: BrowserVoiceProfile[] = [];
+  const profileKeys = new Set<string>();
+
+  function pushProfile(profile: BrowserVoiceProfile) {
+    if (profileKeys.has(profile.key)) {
+      return;
+    }
+    profileKeys.add(profile.key);
+    profiles.push(profile);
   }
 
-  if (typeof window === "undefined") {
-    return initialVoices;
+  const selectedVoice = selectBrowserVoiceForLanguage(
+    voices,
+    settingsSnapshot.browserVoiceURI,
+    settingsSnapshot.languageCode
+  );
+
+  if (selectedVoice) {
+    pushProfile({
+      key: `voice:${selectedVoice.voiceURI}`,
+      label: selectedVoice.name,
+      voice: selectedVoice,
+      lang: selectedVoice.lang
+    });
   }
 
-  await new Promise<void>((resolve) => {
-    let resolved = false;
+  const autoVoice = selectBrowserVoiceForLanguage(
+    voices,
+    null,
+    settingsSnapshot.languageCode
+  );
 
-    const finish = () => {
-      if (resolved) {
-        return;
-      }
-      resolved = true;
-      synthesis.removeEventListener("voiceschanged", handleVoicesChanged);
-      window.clearTimeout(timer);
-      resolve();
-    };
+  if (autoVoice) {
+    pushProfile({
+      key: `voice:${autoVoice.voiceURI}`,
+      label: `${autoVoice.name} (auto)`,
+      voice: autoVoice,
+      lang: autoVoice.lang
+    });
+  }
 
-    const handleVoicesChanged = () => {
-      if (synthesis.getVoices().length > 0) {
-        finish();
-      }
-    };
-
-    const timer = window.setTimeout(finish, timeoutMs);
-    synthesis.addEventListener("voiceschanged", handleVoicesChanged);
+  const mappedLang = toSpeechLangCode(settingsSnapshot.languageCode);
+  pushProfile({
+    key: `lang:${mappedLang}`,
+    label: mappedLang,
+    voice: null,
+    lang: mappedLang
   });
 
-  return synthesis.getVoices();
+  // Ultimo fallback: deixar o proprio SO escolher sem forcar voz/idioma.
+  pushProfile({
+    key: "device-default",
+    label: "device-default",
+    voice: null,
+    lang: null
+  });
+
+  return profiles;
+}
+
+function getSpeechWatchdogConfig() {
+  if (isMobileUserAgent()) {
+    return { startupMs: 4200, hardMs: 40000, rate: 0.96 };
+  }
+
+  return { startupMs: 3200, hardMs: 30000, rate: 1 };
 }
 
 function formatResetDateLabel(resetUnix: number): string {
@@ -825,140 +870,183 @@ export default function App() {
     setIsSpeaking(false);
   }
 
-  function speakWithBrowser(
-    text: string,
-    sessionId: number,
-    settingsSnapshot: { browserVoiceURI: string | null; languageCode: string }
-  ) {
-    if (!isSpeechSupported || typeof window === "undefined") {
-      return;
+  async function speakBrowserChunk(
+    synthesis: SpeechSynthesis,
+    chunkText: string,
+    profile: BrowserVoiceProfile,
+    sessionId: number
+  ): Promise<BrowserChunkResult> {
+    if (typeof window === "undefined") {
+      return { status: "failed", errorCode: "window_unavailable" };
     }
 
-    const chunks = splitTextForBrowserSpeech(text);
-    if (chunks.length === 0) {
-      return;
-    }
-
-    const synthesis = window.speechSynthesis;
-    const voices = synthesis.getVoices();
-    let activeVoice = selectBrowserVoiceForLanguage(
-      voices,
-      settingsSnapshot.browserVoiceURI,
-      settingsSnapshot.languageCode
-    );
-    let retriedWithAutomaticVoice = false;
-    let retriedWithDeviceDefault = false;
-    const fallbackLang = toSpeechLangCode(settingsSnapshot.languageCode);
-    const speechRate = isMobileUserAgent() ? 0.96 : 1;
-
-    function tryRetryWithDeviceDefault(index: number) {
-      if (retriedWithDeviceDefault || !isSpeechSessionActive(sessionId)) {
-        return false;
-      }
-
-      retriedWithDeviceDefault = true;
-      synthesis.cancel();
-      window.setTimeout(() => speakChunk(index, true), 120);
-      return true;
-    }
-
-    const speakChunk = (index: number, useDeviceDefault = false) => {
-      if (!isSpeechSessionActive(sessionId)) {
-        return;
-      }
-
-      if (index >= chunks.length) {
-        setIsSpeaking(false);
-        return;
-      }
-
-      let isChunkFinished = false;
+    return new Promise<BrowserChunkResult>((resolve) => {
+      const { startupMs, hardMs, rate } = getSpeechWatchdogConfig();
       let didStart = false;
-      const utterance = new SpeechSynthesisUtterance(chunks[index]);
-      if (useDeviceDefault) {
-        // Sem forcar voice/lang: deixa o SO escolher a voz nativa mais estavel.
-      } else if (activeVoice) {
-        utterance.voice = activeVoice;
-        utterance.lang = activeVoice.lang;
-      } else if (fallbackLang) {
-        utterance.lang = fallbackLang;
+      let settled = false;
+
+      const utterance = new SpeechSynthesisUtterance(chunkText);
+      utterance.rate = rate;
+      if (profile.voice) {
+        utterance.voice = profile.voice;
+        utterance.lang = profile.voice.lang;
+      } else if (profile.lang) {
+        utterance.lang = profile.lang;
       }
-      utterance.rate = speechRate;
+
+      const finalize = (result: BrowserChunkResult) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        window.clearTimeout(startupWatchdog);
+        window.clearTimeout(hardWatchdog);
+        utterance.onstart = null;
+        utterance.onend = null;
+        utterance.onerror = null;
+        resolve(result);
+      };
+
+      const startupWatchdog = window.setTimeout(() => {
+        if (settled) {
+          return;
+        }
+        if (!isSpeechSessionActive(sessionId)) {
+          finalize({ status: "failed", errorCode: "session_inactive" });
+          return;
+        }
+        if (didStart || synthesis.speaking || synthesis.pending) {
+          return;
+        }
+
+        try {
+          synthesis.cancel();
+        } catch (_error) {
+          // no-op
+        }
+        finalize({ status: "not_started", errorCode: "startup_timeout" });
+      }, startupMs);
+
+      const hardWatchdog = window.setTimeout(() => {
+        if (settled) {
+          return;
+        }
+        if (!isSpeechSessionActive(sessionId)) {
+          finalize({ status: "failed", errorCode: "session_inactive" });
+          return;
+        }
+        if (didStart && !synthesis.speaking && !synthesis.pending) {
+          finalize({ status: "ended", errorCode: "" });
+          return;
+        }
+
+        try {
+          synthesis.cancel();
+        } catch (_error) {
+          // no-op
+        }
+        finalize({ status: "failed", errorCode: "hard_timeout" });
+      }, hardMs);
+
       utterance.onstart = () => {
         didStart = true;
       };
-      const watchdogMs = isMobileUserAgent() ? 8000 : 12000;
-      const watchdog = window.setTimeout(() => {
-        if (isChunkFinished || didStart || !isSpeechSessionActive(sessionId)) {
-          return;
-        }
-
-        synthesis.cancel();
-        if (!useDeviceDefault && settingsSnapshot.browserVoiceURI && !retriedWithAutomaticVoice) {
-          retriedWithAutomaticVoice = true;
-          activeVoice = selectBrowserVoiceForLanguage(
-            synthesis.getVoices(),
-            null,
-            settingsSnapshot.languageCode
-          );
-          window.setTimeout(() => speakChunk(index), 120);
-          return;
-        }
-        if (tryRetryWithDeviceDefault(index)) {
-          return;
-        }
-
-        setRuntimeMessage(
-          "Falha na leitura por voz do navegador neste dispositivo. Use o modo ElevenLabs para compatibilidade total."
-        );
-        setIsSpeaking(false);
-      }, watchdogMs);
 
       utterance.onend = () => {
-        isChunkFinished = true;
-        window.clearTimeout(watchdog);
-        if (!isSpeechSessionActive(sessionId)) {
-          return;
-        }
-
-        window.setTimeout(() => speakChunk(index + 1), 10);
+        finalize({ status: "ended", errorCode: "" });
       };
+
       utterance.onerror = (event) => {
-        isChunkFinished = true;
-        window.clearTimeout(watchdog);
+        const code = event.error || "speech_error";
         if (!isSpeechSessionActive(sessionId)) {
+          finalize({ status: "failed", errorCode: "session_inactive" });
           return;
         }
 
-        synthesis.cancel();
-        if (!useDeviceDefault && settingsSnapshot.browserVoiceURI && !retriedWithAutomaticVoice) {
-          retriedWithAutomaticVoice = true;
-          activeVoice = selectBrowserVoiceForLanguage(
-            synthesis.getVoices(),
-            null,
-            settingsSnapshot.languageCode
-          );
-          window.setTimeout(() => speakChunk(index), 120);
-          return;
-        }
-        if (tryRetryWithDeviceDefault(index)) {
+        if (!didStart && (synthesis.speaking || synthesis.pending)) {
           return;
         }
 
-        setRuntimeMessage(
-          `Falha na leitura por voz do navegador (${event.error || "erro_desconhecido"}). Use o modo ElevenLabs para compatibilidade total.`
-        );
-        setIsSpeaking(false);
+        if (!didStart) {
+          finalize({ status: "not_started", errorCode: code });
+          return;
+        }
+
+        finalize({ status: "failed", errorCode: code });
       };
 
-      synthesis.speak(utterance);
-    };
+      try {
+        synthesis.speak(utterance);
+      } catch (_error) {
+        finalize({ status: "not_started", errorCode: "speak_exception" });
+      }
+    });
+  }
 
+  async function speakWithBrowser(
+    text: string,
+    sessionId: number,
+    settingsSnapshot: { browserVoiceURI: string | null; languageCode: string }
+  ): Promise<boolean> {
+    if (!isSpeechSupported || typeof window === "undefined") {
+      return false;
+    }
+
+    const chunks = splitTextForBrowserSpeech(text, isMobileUserAgent() ? 180 : 220);
+    if (chunks.length === 0) {
+      return false;
+    }
+
+    const synthesis = window.speechSynthesis;
     if (synthesis.speaking || synthesis.pending) {
       synthesis.cancel();
     }
+
     setIsSpeaking(true);
-    speakChunk(0);
+    let lastErrorCode = "speech_error";
+
+    for (const chunk of chunks) {
+      if (!isSpeechSessionActive(sessionId)) {
+        return false;
+      }
+
+      const voices = synthesis.getVoices();
+      const profiles = buildBrowserVoiceProfiles(voices, settingsSnapshot);
+      let chunkSpoken = false;
+
+      for (const profile of profiles) {
+        if (!isSpeechSessionActive(sessionId)) {
+          return false;
+        }
+
+        const result = await speakBrowserChunk(synthesis, chunk, profile, sessionId);
+        lastErrorCode = result.errorCode || lastErrorCode;
+
+        if (!isSpeechSessionActive(sessionId)) {
+          return false;
+        }
+
+        if (result.status === "ended") {
+          chunkSpoken = true;
+          break;
+        }
+      }
+
+      if (!chunkSpoken) {
+        setRuntimeMessage(
+          `Falha na leitura por voz do navegador (${lastErrorCode}).`
+        );
+        setIsSpeaking(false);
+        return false;
+      }
+    }
+
+    if (!isSpeechSessionActive(sessionId)) {
+      return false;
+    }
+
+    setIsSpeaking(false);
+    return true;
   }
 
   async function speakWithElevenLabs(
@@ -1099,7 +1187,37 @@ export default function App() {
       browserVoiceURI: speechSettings.browserVoiceURI,
       languageCode: speechSettings.languageCode
     };
-    void speakWithBrowser(fullBiographyText, sessionId, settingsSnapshot);
+    const elevenSnapshot =
+      speechSettings.elevenVoiceId && speechSettings.languageCode
+        ? {
+            elevenVoiceId: speechSettings.elevenVoiceId,
+            languageCode: speechSettings.languageCode
+          }
+        : null;
+
+    void (async () => {
+      const browserOk = await speakWithBrowser(
+        fullBiographyText,
+        sessionId,
+        settingsSnapshot
+      );
+
+      if (browserOk || !isSpeechSessionActive(sessionId)) {
+        return;
+      }
+
+      if (!elevenSnapshot) {
+        setRuntimeMessage(
+          "Falha na leitura por voz do navegador. Selecione uma voz no ElevenLabs para fallback automatico."
+        );
+        return;
+      }
+
+      setRuntimeMessage(
+        "Leitura do navegador indisponivel neste dispositivo. Ativando fallback ElevenLabs..."
+      );
+      await speakWithElevenLabs(speechSegments, sessionId, elevenSnapshot);
+    })();
   }
 
   const canSpeak =
