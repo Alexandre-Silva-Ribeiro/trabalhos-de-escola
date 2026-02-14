@@ -4,7 +4,7 @@ const sourceLinks: ReadonlyArray<{ label: string; href: string }> = [
     href: "https://pt.wikipedia.org/wiki/Enedina_Alves_Marques"
   },
   {
-    label: "UFPR - Primeira engenheira negra do pais",
+    label: "UFPR - Primeira engenheira negra do país",
     href: "https://ufpr.br/primeira-engenheira-negra-do-pais-e-formada-pela-ufpr-recebe-homenagem-do-google/"
   },
   {
@@ -12,7 +12,7 @@ const sourceLinks: ReadonlyArray<{ label: string; href: string }> = [
     href: "https://plenarinho.leg.br/index.php/2023/09/enedina-alves-marques/"
   },
   {
-    label: "Colegio Estadual do Parana - Homenagem a Enedina",
+    label: "Colégio Estadual do Paraná - Homenagem a Enedina",
     href: "https://www.cep.pr.gov.br/Noticia/Enedina-Alves-Marques-uma-mulher-frente-do-seu-tempo-foi-estudante-do-Ginasio-Paranaense"
   }
 ];
@@ -23,8 +23,8 @@ export default function Fontes() {
       <article className="route-page-card">
         <h1>Fontes</h1>
         <p>
-          Referencias utilizadas para consulta biografica e contextualizacao
-          historica.
+          Referências utilizadas para consulta biográfica e contextualização
+          histórica.
         </p>
         <ul className="sources-list">
           {sourceLinks.map((source) => (

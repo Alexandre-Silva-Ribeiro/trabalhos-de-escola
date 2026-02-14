@@ -36,11 +36,11 @@ export default function Header() {
       <div className="header-bar">
         <div className="header-spacer" />
 
-        <nav className="header-nav-shell" aria-label="Navegacao principal">
+        <nav className="header-nav-shell" aria-label="Navegação principal">
           <ul className="header-nav">
             <li>
               <button type="button" onClick={() => goToHomeAndScroll("top")}>
-                Inicio
+                Início
               </button>
             </li>
             <li>
@@ -81,13 +81,13 @@ export default function Header() {
       <div className="institutional-banner">
         <h2 className="institutional-title">
           Enedina Alves Marques: Primeira Engenheira Negra do Brasil e Primeira
-          Engenheira do Sul do Pais
+          Engenheira do Sul do País
         </h2>
         <ul className="institutional-points">
           <li>Formada em Engenharia Civil pela UFPR (1945)</li>
-          <li>Lider na construcao da Usina Hidreletrica Capivari-Cachoeira</li>
+          <li>Líder na construção da Usina Hidrelétrica Capivari-Cachoeira</li>
           <li>Conhecida como "A Dama do Capivari"</li>
-          <li>Nascida em Curitiba, Parana</li>
+          <li>Nascida em Curitiba, Paraná</li>
         </ul>
       </div>
     </header>

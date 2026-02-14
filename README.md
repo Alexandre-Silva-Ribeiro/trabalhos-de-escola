@@ -5,18 +5,18 @@ Projeto full stack minimalista com:
 - Frontend: React + TypeScript + Vite + CSS puro
 - Backend: Node.js + Express
 
-## Estrutura do repositorio
+## Estrutura do repositório
 
-O deploy e a execucao usam as pastas da raiz do repositorio:
+O deploy e a execução usam as pastas da raiz do repositório:
 
 - `frontend/`
 - `backend/`
 
-Se existir uma pasta local `Biografia/` dentro do seu computador, ela nao e usada no deploy do GitHub Pages.
+Se existir uma pasta local `Biografia/` dentro do seu computador, ela não é usada no deploy do GitHub Pages.
 
 ## Como rodar
 
-1. Instale dependencias na raiz:
+1. Instale dependências na raiz:
 
 ```bash
 npm install
@@ -30,17 +30,17 @@ npm run dev
 
 ## Endpoints
 
-- `GET /api/biography`: retorna o conteudo biografico em JSON.
+- `GET /api/biography`: retorna o conteúdo biográfico em JSON.
 - `GET /api/elevenlabs/voices`: lista vozes do ElevenLabs.
-- `POST /api/elevenlabs/speech`: gera audio da biografia com ElevenLabs.
+- `POST /api/elevenlabs/speech`: gera áudio da biografia com ElevenLabs.
 
 ## ElevenLabs (opcional)
 
-Para habilitar o seletor de vozes do ElevenLabs:
+Para usar a API do ElevenLabs no backend:
 
 ```bash
 ELEVENLABS_API_KEY=sua_chave
 ```
 
-Voce tambem pode criar o arquivo `backend/.env` usando `backend/.env.example`
+Você também pode criar o arquivo `backend/.env` usando `backend/.env.example`
 e definir a chave nele.

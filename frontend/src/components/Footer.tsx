@@ -24,13 +24,13 @@ export default function Footer({ projectName }: FooterProps) {
           <h2>Enedina Alves Marques (1913-1981)</h2>
           <p>Primeira Engenheira Negra do Brasil (Formada em 1945 pela UFPR)</p>
           <p className="footer-legacy-line">
-            Legado: Construcao da Usina Capivari-Cachoeira | Pioneira em Obras
-            Publicas | Referencia em Engenharia no Parana
+            Legado: Construção da Usina Capivari-Cachoeira | Pioneira em Obras
+            Públicas | Referência em Engenharia no Paraná
           </p>
         </section>
 
-        <nav className="footer-block" aria-label="Navegacao secundaria">
-          <h2>Navegacao secundaria</h2>
+        <nav className="footer-block" aria-label="Navegação secundária">
+          <h2>Navegação secundária</h2>
           <ul>
             {secondaryNavItems.map((item) => (
               <li key={item.label}>
@@ -41,7 +41,7 @@ export default function Footer({ projectName }: FooterProps) {
         </nav>
 
         <section className="footer-block">
-          <h2>Referencias externas</h2>
+          <h2>Referências externas</h2>
           <ul>
             {externalItems.map((item) => (
               <li key={item.label}>
@@ -55,8 +55,8 @@ export default function Footer({ projectName }: FooterProps) {
       </div>
 
       <p className="footer-bottom">
-        {"\u00A9"} 2026 {projectName} - Resgatando a historia das mulheres na
-        ciencia.
+        {"\u00A9"} 2026 {projectName} - Resgatando a história das mulheres na
+        ciência.
       </p>
     </footer>
   );

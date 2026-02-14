@@ -154,14 +154,14 @@ app.post("/api/elevenlabs/speech", async (req, res) => {
   if (!ELEVENLABS_API_KEY) {
     res.status(503).json({
       error:
-        "Configure ELEVENLABS_API_KEY no backend para gerar audio do ElevenLabs."
+        "Configure ELEVENLABS_API_KEY no backend para gerar áudio do ElevenLabs."
     });
     return;
   }
 
   const { text, voiceId, languageCode } = req.body ?? {};
   if (typeof text !== "string" || text.trim().length === 0) {
-    res.status(400).json({ error: "Texto invalido." });
+    res.status(400).json({ error: "Texto inválido." });
     return;
   }
 
@@ -171,7 +171,7 @@ app.post("/api/elevenlabs/speech", async (req, res) => {
   }
 
   if (typeof voiceId !== "string" || voiceId.trim().length === 0) {
-    res.status(400).json({ error: "voiceId invalido." });
+    res.status(400).json({ error: "voiceId inválido." });
     return;
   }
 
@@ -214,7 +214,7 @@ app.post("/api/elevenlabs/speech", async (req, res) => {
           () => null
         );
         res.status(429).json({
-          error: "Falha ao gerar audio no ElevenLabs.",
+          error: "Falha ao gerar áudio no ElevenLabs.",
           details: lastErrorDetails,
           nextCharacterCountResetUnix:
             subscription?.nextCharacterCountResetUnix ?? null
@@ -224,7 +224,7 @@ app.post("/api/elevenlabs/speech", async (req, res) => {
 
       if (currentResponse.status !== 400 && currentResponse.status !== 422) {
         res.status(currentResponse.status).json({
-          error: "Falha ao gerar audio no ElevenLabs.",
+          error: "Falha ao gerar áudio no ElevenLabs.",
           details: lastErrorDetails
         });
         return;
@@ -238,7 +238,7 @@ app.post("/api/elevenlabs/speech", async (req, res) => {
           () => null
         );
         res.status(429).json({
-          error: "Falha ao gerar audio no ElevenLabs.",
+          error: "Falha ao gerar áudio no ElevenLabs.",
           details: lastErrorDetails,
           nextCharacterCountResetUnix:
             subscription?.nextCharacterCountResetUnix ?? null
@@ -247,8 +247,8 @@ app.post("/api/elevenlabs/speech", async (req, res) => {
       }
 
       res.status(422).json({
-        error: "Falha ao gerar audio no ElevenLabs.",
-        details: lastErrorDetails || "Nenhum modelo de voz disponivel."
+        error: "Falha ao gerar áudio no ElevenLabs.",
+        details: lastErrorDetails || "Nenhum modelo de voz disponível."
       });
       return;
     }
@@ -260,12 +260,12 @@ app.post("/api/elevenlabs/speech", async (req, res) => {
     res.send(audioBuffer);
   } catch (error) {
     res.status(500).json({
-      error: "Erro inesperado ao sintetizar audio no ElevenLabs.",
+      error: "Erro inesperado ao sintetizar áudio no ElevenLabs.",
       details: error instanceof Error ? error.message : "unknown_error"
     });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend disponivel em http://localhost:${PORT}`);
+  console.log(`Backend disponível em http://localhost:${PORT}`);
 });

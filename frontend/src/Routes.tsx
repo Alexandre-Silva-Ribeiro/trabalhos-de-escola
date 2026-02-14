@@ -61,7 +61,7 @@ function HomePage({ biography, error, profile }: HomePageProps) {
   }
 
   if (!biography) {
-    return <p className="status-message">Carregando conteudo biografico...</p>;
+    return <p className="status-message">Carregando conteúdo biográfico...</p>;
   }
 
   return (

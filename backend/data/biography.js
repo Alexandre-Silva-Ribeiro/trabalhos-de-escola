@@ -41,7 +41,7 @@ const biography = {
     {
       type: "paragraph",
       content:
-        "No serviço público paranaense, ela atuou em frentes ligadas a infraestrutura e planejamento, participando de projetos que exigiam precisão, responsabilidade e visão de longo prazo. A presença de Enedina nesses ambientes ajudou a normalizar a ideia de que competência técnica não tem raça nem gênero, ainda que o racismo estrutural e o sexismo seguissem presentes no cotidiano institucional."
+        "No serviço público paranaense, ela atuou em frentes ligadas à infraestrutura e ao planejamento, participando de projetos que exigiam precisão, responsabilidade e visão de longo prazo. A presença de Enedina nesses ambientes ajudou a normalizar a ideia de que competência técnica não tem raça nem gênero, ainda que o racismo estrutural e o sexismo seguissem presentes no cotidiano institucional."
     },
     {
       type: "image",

@@ -5,12 +5,12 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import type { Biography, FloatingProfile } from "./types";
 
-const projectName = "Enciclopedia Brasileira de Engenharia";
+const projectName = "Enciclopédia Brasileira de Engenharia";
 
 const floatingProfile: FloatingProfile = {
   fullName: "Enedina Alves Marques",
   dates: "1913-1981",
-  quote: "Competencia tecnica tambem e um ato de justica social.",
+  quote: "Competência técnica também é um ato de justiça social.",
   portrait: "https://plenarinho.leg.br/wp-content/uploads/2023/09/Enedina-Alves-Marques.jpg"
 };
 
@@ -48,7 +48,7 @@ export default function App() {
 
         const staticResponse = await fetch(`${import.meta.env.BASE_URL}biography.json`);
         if (!staticResponse.ok) {
-          throw new Error("Nao foi possivel carregar a biografia.");
+          throw new Error("Não foi possível carregar a biografia.");
         }
 
         const staticData: Biography = await staticResponse.json();
