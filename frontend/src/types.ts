@@ -21,21 +21,3 @@ export interface FloatingProfile {
   quote: string;
   portrait: string;
 }
-
-export type SpeechEngine = "browser" | "elevenlabs";
-
-export interface SpeechSettings {
-  engine: SpeechEngine;
-  languageCode: string;
-  browserVoiceURI: string | null;
-  elevenVoiceId: string | null;
-  elevenVoiceName: string | null;
-}
-
-export interface ElevenVoice {
-  voiceId: string;
-  name: string;
-  category: string;
-  previewUrl: string;
-  labels: Record<string, string>;
-}

@@ -31,16 +31,3 @@ npm run dev
 ## Endpoints
 
 - `GET /api/biography`: retorna o conteúdo biográfico em JSON.
-- `GET /api/elevenlabs/voices`: lista vozes do ElevenLabs.
-- `POST /api/elevenlabs/speech`: gera áudio da biografia com ElevenLabs.
-
-## ElevenLabs (opcional)
-
-Para usar a API do ElevenLabs no backend:
-
-```bash
-ELEVENLABS_API_KEY=sua_chave
-```
-
-Você também pode criar o arquivo `backend/.env` usando `backend/.env.example`
-e definir a chave nele.
