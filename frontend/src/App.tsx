@@ -89,6 +89,85 @@ function buildSpeechSegments(biography: Biography | null): string[] {
   return [leadSegment, remainingText].filter(Boolean);
 }
 
+function splitTextForBrowserSpeech(text: string, maxChunkLength = 220): string[] {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return [];
+  }
+
+  const chunks: string[] = [];
+  let remaining = normalized;
+
+  while (remaining.length > maxChunkLength) {
+    const candidate = remaining.slice(0, maxChunkLength);
+    const punctuationBreak = Math.max(
+      candidate.lastIndexOf(". "),
+      candidate.lastIndexOf("! "),
+      candidate.lastIndexOf("? "),
+      candidate.lastIndexOf("; "),
+      candidate.lastIndexOf(": ")
+    );
+    const whitespaceBreak = candidate.lastIndexOf(" ");
+    const splitIndex =
+      punctuationBreak > Math.floor(maxChunkLength * 0.45)
+        ? punctuationBreak + 1
+        : whitespaceBreak > 0
+          ? whitespaceBreak
+          : maxChunkLength;
+
+    chunks.push(remaining.slice(0, splitIndex).trim());
+    remaining = remaining.slice(splitIndex).trim();
+  }
+
+  if (remaining) {
+    chunks.push(remaining);
+  }
+
+  return chunks;
+}
+
+function voiceMatchesLanguage(voice: SpeechSynthesisVoice, languageCode: string) {
+  const voiceLang = voice.lang.toLowerCase();
+  const targetLang = toSpeechLangCode(languageCode).toLowerCase();
+  const targetBase = targetLang.split("-")[0];
+  return (
+    voiceLang === targetLang ||
+    voiceLang === targetBase ||
+    voiceLang.startsWith(`${targetBase}-`)
+  );
+}
+
+function selectBrowserVoiceForLanguage(
+  voices: SpeechSynthesisVoice[],
+  browserVoiceURI: string | null,
+  languageCode: string
+): SpeechSynthesisVoice | null {
+  const selectedByURI = browserVoiceURI
+    ? voices.find((voice) => voice.voiceURI === browserVoiceURI)
+    : null;
+  if (selectedByURI) {
+    return selectedByURI;
+  }
+
+  const targetFemaleVoice = voices.find(
+    (voice) =>
+      voiceMatchesLanguage(voice, languageCode) &&
+      femaleVoicePattern.test(voice.name)
+  );
+  if (targetFemaleVoice) {
+    return targetFemaleVoice;
+  }
+
+  const targetVoice = voices.find((voice) =>
+    voiceMatchesLanguage(voice, languageCode)
+  );
+  if (targetVoice) {
+    return targetVoice;
+  }
+
+  return selectPreferredFemaleVoice(voices);
+}
+
 function parseElevenLabsErrorMessage(detailsRaw: string): string {
   if (!detailsRaw.trim()) {
     return "";
@@ -307,6 +386,9 @@ export default function App() {
       typeof patch.languageCode !== "undefined" ||
       typeof patch.elevenVoiceId !== "undefined" ||
       typeof patch.browserVoiceURI !== "undefined";
+    const shouldResetBrowserVoice =
+      typeof patch.languageCode !== "undefined" &&
+      typeof patch.browserVoiceURI === "undefined";
 
     if (changesSpeechPipeline && (isSpeaking || isGeneratingSpeech)) {
       stopSpeech();
@@ -320,7 +402,12 @@ export default function App() {
 
     setSpeechSettings((previous) => ({
       ...previous,
-      ...patch
+      ...patch,
+      browserVoiceURI: shouldResetBrowserVoice
+        ? null
+        : typeof patch.browserVoiceURI === "undefined"
+          ? previous.browserVoiceURI
+          : patch.browserVoiceURI
     }));
   }
 
@@ -486,45 +573,72 @@ export default function App() {
     setIsSpeaking(false);
   }
 
-  function speakWithBrowser(text: string, sessionId: number) {
+  function speakWithBrowser(
+    text: string,
+    sessionId: number,
+    settingsSnapshot: { browserVoiceURI: string | null; languageCode: string }
+  ) {
     if (!isSpeechSupported || typeof window === "undefined") {
       return;
     }
 
-    const voices = window.speechSynthesis.getVoices();
-    const selectedByURI = voices.find(
-      (voice) => voice.voiceURI === speechSettings.browserVoiceURI
-    );
-    const fallbackVoice = selectPreferredFemaleVoice(voices);
-    const selectedVoice = selectedByURI ?? fallbackVoice ?? null;
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-      utterance.lang = selectedVoice.lang;
-    } else {
-      utterance.lang = toSpeechLangCode(speechSettings.languageCode);
+    const chunks = splitTextForBrowserSpeech(text);
+    if (chunks.length === 0) {
+      return;
     }
-    utterance.rate = 1;
-    utterance.onend = () => {
+
+    const synthesis = window.speechSynthesis;
+    const voices = synthesis.getVoices();
+    const selectedVoice = selectBrowserVoiceForLanguage(
+      voices,
+      settingsSnapshot.browserVoiceURI,
+      settingsSnapshot.languageCode
+    );
+    const fallbackLang = toSpeechLangCode(settingsSnapshot.languageCode);
+
+    const speakChunk = (index: number) => {
       if (!isSpeechSessionActive(sessionId)) {
         return;
       }
 
-      setIsSpeaking(false);
-    };
-    utterance.onerror = () => {
-      if (!isSpeechSessionActive(sessionId)) {
+      if (index >= chunks.length) {
+        setIsSpeaking(false);
         return;
       }
 
-      setRuntimeMessage("Falha na leitura por voz do navegador.");
-      setIsSpeaking(false);
+      const utterance = new SpeechSynthesisUtterance(chunks[index]);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+      } else {
+        utterance.lang = fallbackLang;
+      }
+      utterance.rate = 1;
+      utterance.onend = () => {
+        if (!isSpeechSessionActive(sessionId)) {
+          return;
+        }
+
+        window.setTimeout(() => speakChunk(index + 1), 10);
+      };
+      utterance.onerror = () => {
+        if (!isSpeechSessionActive(sessionId)) {
+          return;
+        }
+
+        setRuntimeMessage(
+          "Falha na leitura por voz do navegador. Tente Selecionar automaticamente."
+        );
+        setIsSpeaking(false);
+      };
+
+      synthesis.speak(utterance);
     };
 
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    synthesis.cancel();
+    synthesis.resume();
     setIsSpeaking(true);
+    speakChunk(0);
   }
 
   async function speakWithElevenLabs(
@@ -655,7 +769,11 @@ export default function App() {
     }
 
     const sessionId = nextSpeechSessionId();
-    speakWithBrowser(fullBiographyText, sessionId);
+    const settingsSnapshot = {
+      browserVoiceURI: speechSettings.browserVoiceURI,
+      languageCode: speechSettings.languageCode
+    };
+    speakWithBrowser(fullBiographyText, sessionId, settingsSnapshot);
   }
 
   const canSpeak =
