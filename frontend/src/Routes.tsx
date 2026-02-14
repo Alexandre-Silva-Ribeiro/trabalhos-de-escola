@@ -12,18 +12,12 @@ import LegacySection from "./components/LegacySection";
 import MulheresEngenharia from "./components/MulheresEngenharia";
 import Sobre from "./components/Sobre";
 import SobreProjeto from "./components/SobreProjeto";
-import VoiceSelector from "./components/VoiceSelector";
-import type { Biography, FloatingProfile, SpeechSettings } from "./types";
+import type { Biography, FloatingProfile } from "./types";
 
 interface AppRoutesProps {
   biography: Biography | null;
   error: string;
   profile: FloatingProfile;
-  speechSettings: SpeechSettings;
-  onUpdateSpeechSettings: (patch: Partial<SpeechSettings>) => void;
-  browserVoices: SpeechSynthesisVoice[];
-  isSpeechSupported: boolean;
-  isSpeechBusy: boolean;
 }
 
 type HomeNavigationState = {
@@ -84,12 +78,7 @@ function HomePage({ biography, error, profile }: HomePageProps) {
 export default function AppRoutes({
   biography,
   error,
-  profile,
-  speechSettings,
-  onUpdateSpeechSettings,
-  browserVoices,
-  isSpeechSupported,
-  isSpeechBusy
+  profile
 }: AppRoutesProps) {
   return (
     <Routes>
@@ -101,18 +90,6 @@ export default function AppRoutes({
       <Route path="/fontes" element={<Fontes />} />
       <Route path="/sobre" element={<Sobre />} />
       <Route path="/sobre-projeto" element={<SobreProjeto />} />
-      <Route
-        path="/seletor-de-voz"
-        element={
-          <VoiceSelector
-            speechSettings={speechSettings}
-            onUpdateSpeechSettings={onUpdateSpeechSettings}
-            browserVoices={browserVoices}
-            isSpeechSupported={isSpeechSupported}
-            isSpeechBusy={isSpeechBusy}
-          />
-        }
-      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

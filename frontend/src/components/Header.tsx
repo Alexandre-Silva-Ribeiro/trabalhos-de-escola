@@ -64,14 +64,6 @@ export default function Header() {
                 Fontes
               </button>
             </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => goToRoute("/seletor-de-voz")}
-              >
-                Seletor de Voz
-              </button>
-            </li>
           </ul>
         </nav>
 
