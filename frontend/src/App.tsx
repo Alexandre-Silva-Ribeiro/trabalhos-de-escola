@@ -589,11 +589,12 @@ export default function App() {
 
     const synthesis = window.speechSynthesis;
     const voices = synthesis.getVoices();
-    const selectedVoice = selectBrowserVoiceForLanguage(
+    let activeVoice = selectBrowserVoiceForLanguage(
       voices,
       settingsSnapshot.browserVoiceURI,
       settingsSnapshot.languageCode
     );
+    let retriedWithAutomaticVoice = false;
     const fallbackLang = toSpeechLangCode(settingsSnapshot.languageCode);
 
     const speakChunk = (index: number) => {
@@ -606,15 +607,41 @@ export default function App() {
         return;
       }
 
+      let isChunkFinished = false;
       const utterance = new SpeechSynthesisUtterance(chunks[index]);
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
+      if (activeVoice) {
+        utterance.voice = activeVoice;
+        utterance.lang = activeVoice.lang;
       } else {
         utterance.lang = fallbackLang;
       }
       utterance.rate = 1;
+      const watchdog = window.setTimeout(() => {
+        if (isChunkFinished || !isSpeechSessionActive(sessionId)) {
+          return;
+        }
+
+        synthesis.cancel();
+        if (settingsSnapshot.browserVoiceURI && !retriedWithAutomaticVoice) {
+          retriedWithAutomaticVoice = true;
+          activeVoice = selectBrowserVoiceForLanguage(
+            synthesis.getVoices(),
+            null,
+            settingsSnapshot.languageCode
+          );
+          window.setTimeout(() => speakChunk(index), 120);
+          return;
+        }
+
+        setRuntimeMessage(
+          "Falha na leitura por voz do navegador. Tente outro navegador ou ElevenLabs."
+        );
+        setIsSpeaking(false);
+      }, 15000);
+
       utterance.onend = () => {
+        isChunkFinished = true;
+        window.clearTimeout(watchdog);
         if (!isSpeechSessionActive(sessionId)) {
           return;
         }
@@ -622,16 +649,31 @@ export default function App() {
         window.setTimeout(() => speakChunk(index + 1), 10);
       };
       utterance.onerror = () => {
+        isChunkFinished = true;
+        window.clearTimeout(watchdog);
         if (!isSpeechSessionActive(sessionId)) {
           return;
         }
 
+        synthesis.cancel();
+        if (settingsSnapshot.browserVoiceURI && !retriedWithAutomaticVoice) {
+          retriedWithAutomaticVoice = true;
+          activeVoice = selectBrowserVoiceForLanguage(
+            synthesis.getVoices(),
+            null,
+            settingsSnapshot.languageCode
+          );
+          window.setTimeout(() => speakChunk(index), 120);
+          return;
+        }
+
         setRuntimeMessage(
-          "Falha na leitura por voz do navegador. Tente Selecionar automaticamente."
+          "Falha na leitura por voz do navegador. Tente outro navegador ou ElevenLabs."
         );
         setIsSpeaking(false);
       };
 
+      synthesis.resume();
       synthesis.speak(utterance);
     };
 
