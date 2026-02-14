@@ -2,9 +2,22 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 type ScrollTarget = "top" | "biografias";
 
-interface HeaderProps {}
+interface HeaderProps {
+  isSpeaking: boolean;
+  isGeneratingSpeech: boolean;
+  isSpeechEnabled: boolean;
+  onToggleSpeech: () => void;
+  isMobileAudioMode: boolean;
+  hasElevenVoiceSelected: boolean;
+}
 
 export default function Header({
+  isSpeaking,
+  isGeneratingSpeech,
+  isSpeechEnabled,
+  onToggleSpeech,
+  isMobileAudioMode,
+  hasElevenVoiceSelected
 }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +45,15 @@ export default function Header({
   function goToRoute(path: string) {
     navigate(path);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handlePrimaryAction() {
+    if (isMobileAudioMode && !hasElevenVoiceSelected) {
+      goToRoute("/seletor-de-voz");
+      return;
+    }
+
+    onToggleSpeech();
   }
 
   return (
@@ -82,9 +104,18 @@ export default function Header({
           <button
             type="button"
             className="header-action-button"
-            onClick={() => goToRoute("/seletor-de-voz")}
+            disabled={!isSpeaking && !isGeneratingSpeech && !isSpeechEnabled}
+            onClick={handlePrimaryAction}
           >
-            Baixar MP3
+            {isGeneratingSpeech
+              ? isMobileAudioMode
+                ? "Gerando MP3..."
+                : "Gerando audio..."
+              : isSpeaking
+                ? "Parar Leitura"
+                : isMobileAudioMode
+                  ? "Baixar MP3"
+                  : "Ouvir Biografia"}
           </button>
           <button
             type="button"

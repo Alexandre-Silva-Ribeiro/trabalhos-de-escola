@@ -1359,7 +1359,14 @@ export default function App() {
 
   return (
     <div id="inicio">
-      <Header />
+      <Header
+        isSpeaking={isSpeaking}
+        isGeneratingSpeech={isGeneratingSpeech}
+        isSpeechEnabled={canSpeak}
+        onToggleSpeech={toggleSpeech}
+        isMobileAudioMode={isMobileClient}
+        hasElevenVoiceSelected={Boolean(speechSettings.elevenVoiceId)}
+      />
 
       {quotaCountdown && (
         <section className="status-message quota-countdown" aria-live="polite">
