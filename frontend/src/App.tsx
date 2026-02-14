@@ -246,6 +246,15 @@ function isMobileUserAgent() {
   return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 }
 
+function isOperaGxBrowser() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  const ua = navigator.userAgent;
+  return /Opera GX|OPR\/.*GX/i.test(ua);
+}
+
 function isAutoplayLockError(error: unknown) {
   if (!(error instanceof Error)) {
     return false;
@@ -432,6 +441,7 @@ export default function App() {
     }
 
     const synthesis = window.speechSynthesis;
+    const shouldKeepAutoBrowserVoice = !isMobileClient && !isOperaGxBrowser();
     let retryTimer: number | null = null;
     let retryCount = 0;
 
@@ -440,6 +450,16 @@ export default function App() {
       setBrowserVoices(voices);
 
       setSpeechSettings((previous) => {
+        if (shouldKeepAutoBrowserVoice) {
+          if (previous.browserVoiceURI !== null) {
+            return {
+              ...previous,
+              browserVoiceURI: null
+            };
+          }
+          return previous;
+        }
+
         if (previous.browserVoiceURI) {
           return previous;
         }
@@ -469,7 +489,7 @@ export default function App() {
         window.clearTimeout(retryTimer);
       }
     };
-  }, [isSpeechSupported]);
+  }, [isSpeechSupported, isMobileClient]);
 
   useEffect(() => {
     return () => {
@@ -1339,13 +1359,7 @@ export default function App() {
 
   return (
     <div id="inicio">
-      <Header
-        isSpeaking={isSpeaking}
-        isGeneratingSpeech={isGeneratingSpeech}
-        isSpeechEnabled={canSpeak}
-        onToggleSpeech={toggleSpeech}
-        isMobileAudioMode={isMobileClient}
-      />
+      <Header />
 
       {quotaCountdown && (
         <section className="status-message quota-countdown" aria-live="polite">
