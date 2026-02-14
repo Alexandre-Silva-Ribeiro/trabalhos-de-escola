@@ -4,14 +4,18 @@ type ScrollTarget = "top" | "biografias";
 
 interface HeaderProps {
   isSpeaking: boolean;
+  isGeneratingSpeech: boolean;
   isSpeechEnabled: boolean;
   onToggleSpeech: () => void;
+  isMobileAudioMode: boolean;
 }
 
 export default function Header({
   isSpeaking,
+  isGeneratingSpeech,
   isSpeechEnabled,
-  onToggleSpeech
+  onToggleSpeech,
+  isMobileAudioMode
 }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,10 +93,16 @@ export default function Header({
           <button
             type="button"
             className="header-action-button"
-            disabled={!isSpeaking && !isSpeechEnabled}
+            disabled={!isSpeaking && !isGeneratingSpeech && !isSpeechEnabled}
             onClick={onToggleSpeech}
           >
-            {isSpeaking ? "Parar Leitura" : "Ouvir Biografia"}
+            {isGeneratingSpeech && isMobileAudioMode
+              ? "Gerando MP3..."
+              : isSpeaking
+                ? "Parar Leitura"
+                : isMobileAudioMode
+                  ? "Baixar Biografia MP3"
+                  : "Ouvir Biografia"}
           </button>
           <button
             type="button"

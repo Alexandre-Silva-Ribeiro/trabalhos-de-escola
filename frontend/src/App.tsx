@@ -384,6 +384,7 @@ export default function App() {
   const [countdownNowMs, setCountdownNowMs] = useState(() => Date.now());
   const [speechSettings, setSpeechSettings] =
     useState<SpeechSettings>(defaultSpeechSettings);
+  const isMobileClient = useMemo(() => isMobileUserAgent(), []);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
@@ -1151,6 +1152,92 @@ export default function App() {
     }
   }
 
+  async function downloadBiographyMp3(
+    segments: string[],
+    sessionId: number,
+    settingsSnapshot: { elevenVoiceId: string; languageCode: string }
+  ): Promise<boolean> {
+    if (!settingsSnapshot.elevenVoiceId || typeof window === "undefined") {
+      return false;
+    }
+
+    const sanitizedSegments = segments
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+    if (sanitizedSegments.length === 0) {
+      return false;
+    }
+
+    cleanupAudioPlayback();
+    const controller = new AbortController();
+    requestAbortRef.current = controller;
+    setIsGeneratingSpeech(true);
+    setIsSpeaking(true);
+
+    try {
+      const buffers: ArrayBuffer[] = [];
+      for (const segment of sanitizedSegments) {
+        if (controller.signal.aborted || !isSpeechSessionActive(sessionId)) {
+          return false;
+        }
+
+        const audioPart = await requestElevenLabsAudio(
+          segment,
+          controller.signal,
+          settingsSnapshot
+        );
+        buffers.push(audioPart);
+      }
+
+      if (!isSpeechSessionActive(sessionId)) {
+        return false;
+      }
+
+      const mp3Blob = new Blob(buffers, { type: "audio/mpeg" });
+      const fileUrl = URL.createObjectURL(mp3Blob);
+      const anchor = document.createElement("a");
+      anchor.href = fileUrl;
+      anchor.download = "biografia-enedina-alves-marques.mp3";
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 30_000);
+
+      setRuntimeMessage("MP3 gerado com sucesso. O download foi iniciado.");
+      setIsSpeaking(false);
+      return true;
+    } catch (speechError) {
+      if (controller.signal.aborted || !isSpeechSessionActive(sessionId)) {
+        return false;
+      }
+
+      if (speechError instanceof ElevenLabsQuotaExceededError) {
+        setElevenLabsResetUnix(speechError.resetUnix);
+        setRuntimeMessage("");
+        setIsSpeaking(false);
+        return false;
+      }
+
+      setRuntimeMessage(
+        speechError instanceof Error
+          ? speechError.message
+          : "Erro ao gerar MP3 no ElevenLabs."
+      );
+      setElevenLabsResetUnix(null);
+      setIsSpeaking(false);
+      return false;
+    } finally {
+      if (requestAbortRef.current === controller) {
+        requestAbortRef.current = null;
+      }
+
+      if (isSpeechSessionActive(sessionId)) {
+        setIsGeneratingSpeech(false);
+        setIsSpeaking(false);
+      }
+    }
+  }
+
   function toggleSpeech() {
     if (isSpeaking) {
       stopSpeech();
@@ -1161,9 +1248,30 @@ export default function App() {
       return;
     }
 
-    void unlockAudioPlayback();
+    if (!isMobileClient) {
+      void unlockAudioPlayback();
+    }
     setRuntimeMessage("");
     setElevenLabsResetUnix(null);
+
+    if (isMobileClient) {
+      if (!speechSettings.elevenVoiceId) {
+        setRuntimeMessage(
+          "No mobile, selecione uma voz no ElevenLabs para baixar o MP3."
+        );
+        return;
+      }
+
+      const sessionId = nextSpeechSessionId();
+      const settingsSnapshot = {
+        elevenVoiceId: speechSettings.elevenVoiceId,
+        languageCode: speechSettings.languageCode
+      };
+
+      void downloadBiographyMp3(speechSegments, sessionId, settingsSnapshot);
+      return;
+    }
+
     if (speechSettings.engine === "elevenlabs") {
       if (!speechSettings.elevenVoiceId) {
         setRuntimeMessage("Selecione uma voz do ElevenLabs para iniciar a leitura.");
@@ -1223,16 +1331,20 @@ export default function App() {
   const canSpeak =
     !!biography &&
     !error &&
-    (speechSettings.engine === "browser"
-      ? isSpeechSupported
-      : Boolean(speechSettings.elevenVoiceId));
+    (isMobileClient
+      ? Boolean(speechSettings.elevenVoiceId)
+      : speechSettings.engine === "browser"
+        ? isSpeechSupported
+        : Boolean(speechSettings.elevenVoiceId));
 
   return (
     <div id="inicio">
       <Header
         isSpeaking={isSpeaking}
+        isGeneratingSpeech={isGeneratingSpeech}
         isSpeechEnabled={canSpeak}
         onToggleSpeech={toggleSpeech}
+        isMobileAudioMode={isMobileClient}
       />
 
       {quotaCountdown && (
