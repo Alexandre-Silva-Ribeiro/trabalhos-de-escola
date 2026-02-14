@@ -255,6 +255,8 @@ app.post("/api/elevenlabs/speech", async (req, res) => {
 
     const audioBuffer = Buffer.from(await response.arrayBuffer());
     res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Content-Length", String(audioBuffer.length));
+    res.setHeader("Cache-Control", "no-store");
     res.send(audioBuffer);
   } catch (error) {
     res.status(500).json({

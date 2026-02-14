@@ -79,14 +79,49 @@ function buildSpeechSegments(biography: Biography | null): string[] {
     .filter((section) => section.type === "paragraph")
     .map((section) => section.content.trim())
     .filter(Boolean);
-  const leadSegment = [biography.title, biography.intro, paragraphs[0] ?? ""]
+  const fullText = [biography.title, biography.intro, ...paragraphs]
     .map((part) => part.trim())
     .filter(Boolean)
     .join(". ");
-  const remainingText = paragraphs.slice(1).join(" ").trim();
 
-  // Mantem inicio rapido sem pulverizar em muitas chamadas (cada request consome creditos).
-  return [leadSegment, remainingText].filter(Boolean);
+  return splitTextForElevenLabs(fullText);
+}
+
+function splitTextForElevenLabs(text: string, maxChunkLength = 1200): string[] {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return [];
+  }
+
+  const chunks: string[] = [];
+  let remaining = normalized;
+
+  while (remaining.length > maxChunkLength) {
+    const candidate = remaining.slice(0, maxChunkLength);
+    const punctuationBreak = Math.max(
+      candidate.lastIndexOf(". "),
+      candidate.lastIndexOf("! "),
+      candidate.lastIndexOf("? "),
+      candidate.lastIndexOf("; "),
+      candidate.lastIndexOf(": ")
+    );
+    const whitespaceBreak = candidate.lastIndexOf(" ");
+    const splitIndex =
+      punctuationBreak > Math.floor(maxChunkLength * 0.5)
+        ? punctuationBreak + 1
+        : whitespaceBreak > 0
+          ? whitespaceBreak
+          : maxChunkLength;
+
+    chunks.push(remaining.slice(0, splitIndex).trim());
+    remaining = remaining.slice(splitIndex).trim();
+  }
+
+  if (remaining) {
+    chunks.push(remaining);
+  }
+
+  return chunks;
 }
 
 function splitTextForBrowserSpeech(text: string, maxChunkLength = 220): string[] {
@@ -145,7 +180,7 @@ function selectBrowserVoiceForLanguage(
   const selectedByURI = browserVoiceURI
     ? voices.find((voice) => voice.voiceURI === browserVoiceURI)
     : null;
-  if (selectedByURI) {
+  if (selectedByURI && voiceMatchesLanguage(selectedByURI, languageCode)) {
     return selectedByURI;
   }
 
@@ -163,6 +198,10 @@ function selectBrowserVoiceForLanguage(
   );
   if (targetVoice) {
     return targetVoice;
+  }
+
+  if (selectedByURI) {
+    return selectedByURI;
   }
 
   return selectPreferredFemaleVoice(voices);
@@ -197,6 +236,14 @@ function parseElevenLabsErrorStatus(detailsRaw: string): string {
   } catch (_error) {
     return "";
   }
+}
+
+function isMobileUserAgent() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 }
 
 function formatResetDateLabel(resetUnix: number): string {
@@ -245,6 +292,8 @@ export default function App() {
     useState<SpeechSettings>(defaultSpeechSettings);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const audioObjectUrlRef = useRef<string | null>(null);
   const requestAbortRef = useRef<AbortController | null>(null);
   const speechSessionRef = useRef(0);
 
@@ -287,6 +336,8 @@ export default function App() {
     }
 
     const synthesis = window.speechSynthesis;
+    let retryTimer: number | null = null;
+    let retryCount = 0;
 
     function refreshBrowserVoices() {
       const voices = synthesis.getVoices();
@@ -307,12 +358,20 @@ export default function App() {
           browserVoiceURI: preferred.voiceURI
         };
       });
+
+      if (voices.length === 0 && retryCount < 20) {
+        retryCount += 1;
+        retryTimer = window.setTimeout(refreshBrowserVoices, 250);
+      }
     }
 
     refreshBrowserVoices();
     synthesis.addEventListener("voiceschanged", refreshBrowserVoices);
     return () => {
       synthesis.removeEventListener("voiceschanged", refreshBrowserVoices);
+      if (retryTimer !== null) {
+        window.clearTimeout(retryTimer);
+      }
     };
   }, [isSpeechSupported]);
 
@@ -321,16 +380,7 @@ export default function App() {
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
-      requestAbortRef.current?.abort();
-      if (sourceNodeRef.current) {
-        try {
-          sourceNodeRef.current.stop();
-        } catch (_error) {
-          // no-op
-        }
-        sourceNodeRef.current.disconnect();
-        sourceNodeRef.current = null;
-      }
+      cleanupAudioPlayback();
       if (audioContextRef.current) {
         void audioContextRef.current.close();
         audioContextRef.current = null;
@@ -411,6 +461,20 @@ export default function App() {
     }));
   }
 
+  function cleanupAudioElement() {
+    const currentAudio = audioElementRef.current;
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.src = "";
+      audioElementRef.current = null;
+    }
+
+    if (audioObjectUrlRef.current) {
+      URL.revokeObjectURL(audioObjectUrlRef.current);
+      audioObjectUrlRef.current = null;
+    }
+  }
+
   function cleanupAudioPlayback(options?: { abortRequest?: boolean }) {
     if (options?.abortRequest ?? true) {
       requestAbortRef.current?.abort();
@@ -426,6 +490,8 @@ export default function App() {
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
     }
+
+    cleanupAudioElement();
   }
 
   async function fetchElevenLabsSubscriptionResetUnix(): Promise<number | null> {
@@ -539,6 +605,92 @@ export default function App() {
     });
   }
 
+  async function playAudioBufferWithElement(
+    audioArrayBuffer: ArrayBuffer,
+    signal: AbortSignal
+  ) {
+    if (typeof window === "undefined") {
+      throw new Error("Elemento de audio indisponivel neste ambiente.");
+    }
+
+    cleanupAudioElement();
+    const audioBlob = new Blob([audioArrayBuffer], { type: "audio/mpeg" });
+    const objectUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(objectUrl);
+    audio.preload = "auto";
+    audio.setAttribute("playsinline", "true");
+    audioElementRef.current = audio;
+    audioObjectUrlRef.current = objectUrl;
+
+    await new Promise<void>((resolve, reject) => {
+      let finished = false;
+
+      const finalize = () => {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        signal.removeEventListener("abort", handleAbort);
+        audio.onended = null;
+        audio.onerror = null;
+        if (audioElementRef.current === audio) {
+          audioElementRef.current = null;
+        }
+        if (audioObjectUrlRef.current === objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          audioObjectUrlRef.current = null;
+        }
+      };
+
+      const resolvePlayback = () => {
+        finalize();
+        resolve();
+      };
+
+      const rejectPlayback = (message: string) => {
+        finalize();
+        reject(new Error(message));
+      };
+
+      const handleAbort = () => {
+        audio.pause();
+        resolvePlayback();
+      };
+
+      audio.onended = resolvePlayback;
+      audio.onerror = () => {
+        rejectPlayback("Falha ao reproduzir audio no dispositivo.");
+      };
+
+      signal.addEventListener("abort", handleAbort, { once: true });
+      const playPromise = audio.play();
+      if (playPromise) {
+        void playPromise.catch(() => {
+          rejectPlayback(
+            "Reproducao bloqueada no navegador. Toque novamente em Ouvir Biografia."
+          );
+        });
+      }
+    });
+  }
+
+  async function playElevenLabsAudioChunk(
+    context: AudioContext | null,
+    audioArrayBuffer: ArrayBuffer,
+    signal: AbortSignal
+  ) {
+    if (!context) {
+      await playAudioBufferWithElement(audioArrayBuffer, signal);
+      return;
+    }
+
+    try {
+      await playDecodedAudioBuffer(context, audioArrayBuffer, signal);
+    } catch (_decodeError) {
+      await playAudioBufferWithElement(audioArrayBuffer, signal);
+    }
+  }
+
   async function ensureAudioContext() {
     if (typeof window === "undefined") {
       throw new Error("AudioContext indisponivel neste ambiente.");
@@ -608,6 +760,7 @@ export default function App() {
       }
 
       let isChunkFinished = false;
+      let didStart = false;
       const utterance = new SpeechSynthesisUtterance(chunks[index]);
       if (activeVoice) {
         utterance.voice = activeVoice;
@@ -616,8 +769,12 @@ export default function App() {
         utterance.lang = fallbackLang;
       }
       utterance.rate = 1;
+      utterance.onstart = () => {
+        didStart = true;
+      };
+      const watchdogMs = isMobileUserAgent() ? 8000 : 12000;
       const watchdog = window.setTimeout(() => {
-        if (isChunkFinished || !isSpeechSessionActive(sessionId)) {
+        if (isChunkFinished || didStart || !isSpeechSessionActive(sessionId)) {
           return;
         }
 
@@ -637,7 +794,7 @@ export default function App() {
           "Falha na leitura por voz do navegador. Tente outro navegador ou ElevenLabs."
         );
         setIsSpeaking(false);
-      }, 15000);
+      }, watchdogMs);
 
       utterance.onend = () => {
         isChunkFinished = true;
@@ -706,7 +863,12 @@ export default function App() {
     setIsSpeaking(true);
 
     try {
-      const context = await ensureAudioContext();
+      let context: AudioContext | null = null;
+      try {
+        context = await ensureAudioContext();
+      } catch (_audioContextError) {
+        context = null;
+      }
       let nextAudioRequest: Promise<ArrayBuffer> | null = requestElevenLabsAudio(
         sanitizedSegments[0],
         controller.signal,
@@ -739,7 +901,7 @@ export default function App() {
           setIsGeneratingSpeech(false);
         }
 
-        await playDecodedAudioBuffer(context, currentAudio, controller.signal);
+        await playElevenLabsAudioChunk(context, currentAudio, controller.signal);
       }
 
       if (!isSpeechSessionActive(sessionId)) {
