@@ -11,61 +11,42 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages-${{ github.ref }}"
-  cancel-in-progress: false
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   build:
-    outputs:
-      is_latest_main: ${{ steps.freshness.outputs.is_latest_main }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check latest main SHA
-        id: freshness
-        shell: bash
-        run: |
-          git fetch origin main
-          latest_main_sha="$(git rev-parse origin/main)"
-          echo "latest_main_sha=$latest_main_sha"
-          echo "current_sha=$GITHUB_SHA"
-          if [ "$latest_main_sha" = "$GITHUB_SHA" ]; then
-            echo "is_latest_main=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_latest_main=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Setup Node.js
-        if: steps.freshness.outputs.is_latest_main == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
 
       - name: Install dependencies
-        if: steps.freshness.outputs.is_latest_main == 'true'
         run: npm ci
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Build frontend
-        if: steps.freshness.outputs.is_latest_main == 'true'
         env:
           VITE_BASE_PATH: /trabalhos-de-escola/
         run: npm run build --workspace frontend
 
       - name: SPA fallback
-        if: steps.freshness.outputs.is_latest_main == 'true'
         run: cp frontend/dist/index.html frontend/dist/404.html
 
       - name: Upload Pages artifact
-        if: steps.freshness.outputs.is_latest_main == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
 
   deploy:
-    if: needs.build.outputs.is_latest_main == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
