@@ -825,7 +825,7 @@ export default function App() {
     setIsSpeaking(false);
   }
 
-  async function speakWithBrowser(
+  function speakWithBrowser(
     text: string,
     sessionId: number,
     settingsSnapshot: { browserVoiceURI: string | null; languageCode: string }
@@ -840,19 +840,29 @@ export default function App() {
     }
 
     const synthesis = window.speechSynthesis;
-    const voices = await waitForBrowserVoices(synthesis);
-    if (!isSpeechSessionActive(sessionId)) {
-      return;
-    }
+    const voices = synthesis.getVoices();
     let activeVoice = selectBrowserVoiceForLanguage(
       voices,
       settingsSnapshot.browserVoiceURI,
       settingsSnapshot.languageCode
     );
     let retriedWithAutomaticVoice = false;
+    let retriedWithDeviceDefault = false;
     const fallbackLang = toSpeechLangCode(settingsSnapshot.languageCode);
+    const speechRate = isMobileUserAgent() ? 0.96 : 1;
 
-    const speakChunk = (index: number) => {
+    function tryRetryWithDeviceDefault(index: number) {
+      if (retriedWithDeviceDefault || !isSpeechSessionActive(sessionId)) {
+        return false;
+      }
+
+      retriedWithDeviceDefault = true;
+      synthesis.cancel();
+      window.setTimeout(() => speakChunk(index, true), 120);
+      return true;
+    }
+
+    const speakChunk = (index: number, useDeviceDefault = false) => {
       if (!isSpeechSessionActive(sessionId)) {
         return;
       }
@@ -865,13 +875,15 @@ export default function App() {
       let isChunkFinished = false;
       let didStart = false;
       const utterance = new SpeechSynthesisUtterance(chunks[index]);
-      if (activeVoice) {
+      if (useDeviceDefault) {
+        // Sem forcar voice/lang: deixa o SO escolher a voz nativa mais estavel.
+      } else if (activeVoice) {
         utterance.voice = activeVoice;
         utterance.lang = activeVoice.lang;
-      } else {
+      } else if (fallbackLang) {
         utterance.lang = fallbackLang;
       }
-      utterance.rate = 1;
+      utterance.rate = speechRate;
       utterance.onstart = () => {
         didStart = true;
       };
@@ -882,7 +894,7 @@ export default function App() {
         }
 
         synthesis.cancel();
-        if (settingsSnapshot.browserVoiceURI && !retriedWithAutomaticVoice) {
+        if (!useDeviceDefault && settingsSnapshot.browserVoiceURI && !retriedWithAutomaticVoice) {
           retriedWithAutomaticVoice = true;
           activeVoice = selectBrowserVoiceForLanguage(
             synthesis.getVoices(),
@@ -892,9 +904,12 @@ export default function App() {
           window.setTimeout(() => speakChunk(index), 120);
           return;
         }
+        if (tryRetryWithDeviceDefault(index)) {
+          return;
+        }
 
         setRuntimeMessage(
-          "Falha na leitura por voz do navegador. Tente outro navegador ou ElevenLabs."
+          "Falha na leitura por voz do navegador neste dispositivo. Use o modo ElevenLabs para compatibilidade total."
         );
         setIsSpeaking(false);
       }, watchdogMs);
@@ -908,7 +923,7 @@ export default function App() {
 
         window.setTimeout(() => speakChunk(index + 1), 10);
       };
-      utterance.onerror = () => {
+      utterance.onerror = (event) => {
         isChunkFinished = true;
         window.clearTimeout(watchdog);
         if (!isSpeechSessionActive(sessionId)) {
@@ -916,7 +931,7 @@ export default function App() {
         }
 
         synthesis.cancel();
-        if (settingsSnapshot.browserVoiceURI && !retriedWithAutomaticVoice) {
+        if (!useDeviceDefault && settingsSnapshot.browserVoiceURI && !retriedWithAutomaticVoice) {
           retriedWithAutomaticVoice = true;
           activeVoice = selectBrowserVoiceForLanguage(
             synthesis.getVoices(),
@@ -926,19 +941,22 @@ export default function App() {
           window.setTimeout(() => speakChunk(index), 120);
           return;
         }
+        if (tryRetryWithDeviceDefault(index)) {
+          return;
+        }
 
         setRuntimeMessage(
-          "Falha na leitura por voz do navegador. Tente outro navegador ou ElevenLabs."
+          `Falha na leitura por voz do navegador (${event.error || "erro_desconhecido"}). Use o modo ElevenLabs para compatibilidade total.`
         );
         setIsSpeaking(false);
       };
 
-      synthesis.resume();
       synthesis.speak(utterance);
     };
 
-    synthesis.cancel();
-    synthesis.resume();
+    if (synthesis.speaking || synthesis.pending) {
+      synthesis.cancel();
+    }
     setIsSpeaking(true);
     speakChunk(0);
   }
