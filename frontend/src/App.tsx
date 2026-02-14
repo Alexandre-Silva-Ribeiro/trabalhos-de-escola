@@ -246,6 +246,55 @@ function isMobileUserAgent() {
   return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 }
 
+function isAutoplayLockError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return /NotAllowedError|play\(\) failed|gesture/i.test(
+    `${error.name} ${error.message}`
+  );
+}
+
+async function waitForBrowserVoices(
+  synthesis: SpeechSynthesis,
+  timeoutMs = 2200
+): Promise<SpeechSynthesisVoice[]> {
+  const initialVoices = synthesis.getVoices();
+  if (initialVoices.length > 0) {
+    return initialVoices;
+  }
+
+  if (typeof window === "undefined") {
+    return initialVoices;
+  }
+
+  await new Promise<void>((resolve) => {
+    let resolved = false;
+
+    const finish = () => {
+      if (resolved) {
+        return;
+      }
+      resolved = true;
+      synthesis.removeEventListener("voiceschanged", handleVoicesChanged);
+      window.clearTimeout(timer);
+      resolve();
+    };
+
+    const handleVoicesChanged = () => {
+      if (synthesis.getVoices().length > 0) {
+        finish();
+      }
+    };
+
+    const timer = window.setTimeout(finish, timeoutMs);
+    synthesis.addEventListener("voiceschanged", handleVoicesChanged);
+  });
+
+  return synthesis.getVoices();
+}
+
 function formatResetDateLabel(resetUnix: number): string {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "full",
@@ -294,6 +343,7 @@ export default function App() {
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const audioObjectUrlRef = useRef<string | null>(null);
+  const audioUnlockedRef = useRef(false);
   const requestAbortRef = useRef<AbortController | null>(null);
   const speechSessionRef = useRef(0);
 
@@ -665,9 +715,19 @@ export default function App() {
       signal.addEventListener("abort", handleAbort, { once: true });
       const playPromise = audio.play();
       if (playPromise) {
-        void playPromise.catch(() => {
+        void playPromise.catch(async (playError) => {
+          if (isAutoplayLockError(playError)) {
+            await unlockAudioPlayback();
+            try {
+              await audio.play();
+              return;
+            } catch (_retryError) {
+              // continua para mensagem padrao
+            }
+          }
+
           rejectPlayback(
-            "Reproducao bloqueada no navegador. Toque novamente em Ouvir Biografia."
+            "Reproducao bloqueada no navegador. Toque em Ouvir Biografia novamente."
           );
         });
       }
@@ -715,6 +775,46 @@ export default function App() {
     return audioContextRef.current;
   }
 
+  async function unlockAudioPlayback() {
+    if (audioUnlockedRef.current || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const context = await ensureAudioContext();
+      const silentBuffer = context.createBuffer(1, 1, context.sampleRate);
+      const source = context.createBufferSource();
+      const gainNode = context.createGain();
+      gainNode.gain.value = 0;
+      source.buffer = silentBuffer;
+      source.connect(gainNode);
+      gainNode.connect(context.destination);
+      source.start(0);
+      source.stop(context.currentTime + 0.01);
+    } catch (_error) {
+      // no-op
+    }
+
+    try {
+      const unlockElement = new Audio();
+      unlockElement.preload = "auto";
+      unlockElement.muted = true;
+      unlockElement.setAttribute("playsinline", "true");
+      unlockElement.src =
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
+      const playPromise = unlockElement.play();
+      if (playPromise) {
+        await playPromise.catch(() => undefined);
+      }
+      unlockElement.pause();
+      unlockElement.src = "";
+    } catch (_error) {
+      // no-op
+    }
+
+    audioUnlockedRef.current = true;
+  }
+
   function stopSpeech() {
     nextSpeechSessionId();
     setIsGeneratingSpeech(false);
@@ -725,7 +825,7 @@ export default function App() {
     setIsSpeaking(false);
   }
 
-  function speakWithBrowser(
+  async function speakWithBrowser(
     text: string,
     sessionId: number,
     settingsSnapshot: { browserVoiceURI: string | null; languageCode: string }
@@ -740,7 +840,10 @@ export default function App() {
     }
 
     const synthesis = window.speechSynthesis;
-    const voices = synthesis.getVoices();
+    const voices = await waitForBrowserVoices(synthesis);
+    if (!isSpeechSessionActive(sessionId)) {
+      return;
+    }
     let activeVoice = selectBrowserVoiceForLanguage(
       voices,
       settingsSnapshot.browserVoiceURI,
@@ -952,6 +1055,7 @@ export default function App() {
       return;
     }
 
+    void unlockAudioPlayback();
     setRuntimeMessage("");
     setElevenLabsResetUnix(null);
     if (speechSettings.engine === "elevenlabs") {
@@ -977,7 +1081,7 @@ export default function App() {
       browserVoiceURI: speechSettings.browserVoiceURI,
       languageCode: speechSettings.languageCode
     };
-    speakWithBrowser(fullBiographyText, sessionId, settingsSnapshot);
+    void speakWithBrowser(fullBiographyText, sessionId, settingsSnapshot);
   }
 
   const canSpeak =
