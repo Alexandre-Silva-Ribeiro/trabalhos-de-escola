@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { apiUrl } from "../apiBase";
 import type { ElevenVoice, SpeechEngine, SpeechSettings } from "../types";
 
 const languageOptions: ReadonlyArray<{ code: string; label: string }> = [
@@ -37,7 +38,7 @@ export default function VoiceSelector({
       setErrorMessage("");
 
       try {
-        const response = await fetch("/api/elevenlabs/voices");
+        const response = await fetch(apiUrl("/api/elevenlabs/voices"));
         const payload = await response.json().catch(() => null);
         if (!response.ok) {
           throw new Error(

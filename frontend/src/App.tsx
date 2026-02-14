@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AppRoutes from "./Routes";
+import { apiUrl } from "./apiBase";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import type { Biography, FloatingProfile, SpeechSettings } from "./types";
@@ -171,7 +172,7 @@ export default function App() {
   useEffect(() => {
     async function loadBiography() {
       try {
-        const apiResponse = await fetch("/api/biography");
+        const apiResponse = await fetch(apiUrl("/api/biography"));
         if (apiResponse.ok) {
           const apiData: Biography = await apiResponse.json();
           setBiography(apiData);
@@ -342,7 +343,7 @@ export default function App() {
 
   async function fetchElevenLabsSubscriptionResetUnix(): Promise<number | null> {
     try {
-      const response = await fetch("/api/elevenlabs/subscription");
+      const response = await fetch(apiUrl("/api/elevenlabs/subscription"));
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         return null;
@@ -361,7 +362,7 @@ export default function App() {
     signal: AbortSignal,
     settingsSnapshot: { elevenVoiceId: string; languageCode: string }
   ): Promise<ArrayBuffer> {
-    const response = await fetch("/api/elevenlabs/speech", {
+    const response = await fetch(apiUrl("/api/elevenlabs/speech"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
