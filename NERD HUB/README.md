@@ -1,22 +1,27 @@
-﻿# NERD HUB (React + Backend)
+# NERD HUB (React + Backend)
 
-Este projeto foi migrado para arquitetura **frontend + backend** para resolver o problema de vault local-only.
+Arquitetura atual:
+- Auth: Supabase (`supabase.auth`)
+- Backend: Node/Express para `vault` criptografado e `theme_preference`
 
 ## Estrutura
 
 - `frontend/`: React + Vite
 - `backend/`: API Node + Express
-
-## O que mudou
-
-- Login/cadastro agora passam pelo backend.
-- Vault e modulos (timeline, reciprocidade, notas, agenda, stats) sao persistidos no servidor.
-- Senha nao depende mais de `localStorage` para liberar o app.
-- Dados do vault sao criptografados no backend antes de gravar em disco.
+- `backend/sql/`: scripts SQL para tabelas de suporte no Supabase
 
 ## Setup
 
-### 1) Backend
+### 1) Supabase
+
+1. Crie o projeto no Supabase.
+2. Execute `backend/sql/001_user_preferences.sql` no SQL Editor.
+3. Pegue:
+   - `Project URL`
+   - `anon key`
+   - `service_role key`
+
+### 2) Backend
 
 ```bash
 cd backend
@@ -27,7 +32,7 @@ npm run dev
 
 Backend padrao: `http://localhost:4000`
 
-### 2) Frontend
+### 3) Frontend
 
 ```bash
 cd frontend
@@ -38,16 +43,16 @@ npm run dev
 
 Frontend padrao: `http://localhost:5173`
 
-## Endpoints principais
+## Endpoints do backend
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/change-password`
-- `GET /api/vault`
-- `PUT /api/vault`
+- `GET /api/health`
+- `GET /api/vault` (auth required)
+- `PUT /api/vault` (auth required)
+- `GET /api/user/preferences` (auth required)
+- `PUT /api/user/preferences` (auth required)
 
 ## Observacoes
 
-- O backend usa `backend/data/store.json` para persistencia.
-- Em producao, troque `JWT_SECRET` e `ENCRYPTION_SECRET` no `.env`.
-- Arquivos antigos no raiz (`index.html`, `app.js`, etc.) sao da versao estatica anterior e podem ser ignorados.
+- O backend persiste `vault` em `backend/data/store.json`.
+- A preferencia de tema (`theme_preference`) fica no Supabase, tabela `user_preferences`.
+- Nunca exponha `SUPABASE_SERVICE_ROLE_KEY` no frontend.

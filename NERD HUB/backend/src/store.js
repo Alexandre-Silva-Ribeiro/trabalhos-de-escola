@@ -1,7 +1,6 @@
-﻿import { promises as fs } from "node:fs";
+import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,17 +8,10 @@ const dataDir = path.resolve(__dirname, "../data");
 const storeFile = path.join(dataDir, "store.json");
 
 const initialStore = {
-  users: []
+  vaults: []
 };
 
 let writeQueue = Promise.resolve();
-
-export function normalizeUsername(username) {
-  return String(username || "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "");
-}
 
 async function ensureStoreFile() {
   await fs.mkdir(dataDir, { recursive: true });
@@ -30,10 +22,35 @@ async function ensureStoreFile() {
   }
 }
 
+function normalizeStoreShape(rawStore) {
+  if (rawStore && Array.isArray(rawStore.vaults)) {
+    return { vaults: rawStore.vaults };
+  }
+
+  if (rawStore && Array.isArray(rawStore.users)) {
+    const migratedVaults = rawStore.users
+      .filter((item) => item && typeof item.id === "string" && typeof item.vault === "string")
+      .map((item) => ({
+        userId: item.id,
+        vault: item.vault,
+        createdAt: item.createdAt || new Date().toISOString(),
+        updatedAt: item.updatedAt || new Date().toISOString()
+      }));
+
+    return {
+      vaults: migratedVaults
+    };
+  }
+
+  return { ...initialStore };
+}
+
 async function readStore() {
   await ensureStoreFile();
   const raw = await fs.readFile(storeFile, "utf8");
-  return JSON.parse(raw);
+  const normalizedRaw = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+  const parsed = JSON.parse(normalizedRaw);
+  return normalizeStoreShape(parsed);
 }
 
 async function writeStore(store) {
@@ -41,16 +58,6 @@ async function writeStore(store) {
   const tempFile = `${storeFile}.tmp`;
   await fs.writeFile(tempFile, JSON.stringify(store, null, 2), "utf8");
   await fs.rename(tempFile, storeFile);
-}
-
-function publicUser(user) {
-  return {
-    id: user.id,
-    username: user.username,
-    displayName: user.displayName,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt
-  };
 }
 
 async function mutateStore(mutator) {
@@ -64,74 +71,39 @@ async function mutateStore(mutator) {
   return writeQueue;
 }
 
-export async function findUserByUsername(username) {
-  const normalized = normalizeUsername(username);
-  if (!normalized) {
-    return null;
-  }
-
+export async function findVaultRecordByUserId(userId) {
   const store = await readStore();
-  const user = store.users.find((item) => item.username === normalized);
-  return user || null;
+  return store.vaults.find((entry) => entry.userId === userId) || null;
 }
 
-export async function findUserById(id) {
-  const store = await readStore();
-  const user = store.users.find((item) => item.id === id);
-  return user || null;
-}
-
-export async function createUser({ username, displayName, passwordHash, vault }) {
+export async function upsertVaultRecord(userId, encryptedVault) {
   return mutateStore(async (store) => {
-    const normalized = normalizeUsername(username);
-    if (!normalized) {
-      throw new Error("invalid_username");
-    }
-
-    const exists = store.users.some((item) => item.username === normalized);
-    if (exists) {
-      throw new Error("username_exists");
-    }
-
     const now = new Date().toISOString();
-    const nextUser = {
-      id: randomUUID(),
-      username: normalized,
-      displayName: String(displayName || normalized),
-      passwordHash,
-      vault,
+    const existing = store.vaults.find((entry) => entry.userId === userId);
+    if (existing) {
+      existing.vault = encryptedVault;
+      existing.updatedAt = now;
+      return existing;
+    }
+
+    const next = {
+      userId,
+      vault: encryptedVault,
       createdAt: now,
       updatedAt: now
     };
-
-    store.users.push(nextUser);
-    return publicUser(nextUser);
+    store.vaults.push(next);
+    return next;
   });
 }
 
-export async function updateUserVault(userId, vault) {
+export async function deleteVaultRecordByUserId(userId) {
   return mutateStore(async (store) => {
-    const user = store.users.find((item) => item.id === userId);
-    if (!user) {
-      throw new Error("user_not_found");
+    const index = store.vaults.findIndex((entry) => entry.userId === userId);
+    if (index < 0) {
+      return null;
     }
-
-    user.vault = vault;
-    user.updatedAt = new Date().toISOString();
-
-    return publicUser(user);
-  });
-}
-
-export async function updateUserPassword(userId, passwordHash) {
-  return mutateStore(async (store) => {
-    const user = store.users.find((item) => item.id === userId);
-    if (!user) {
-      throw new Error("user_not_found");
-    }
-
-    user.passwordHash = passwordHash;
-    user.updatedAt = new Date().toISOString();
-    return publicUser(user);
+    const [removed] = store.vaults.splice(index, 1);
+    return removed;
   });
 }

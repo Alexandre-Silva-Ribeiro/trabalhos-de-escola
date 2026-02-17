@@ -1,18 +1,12 @@
-﻿import express from "express";
 import cors from "cors";
+import express from "express";
 import { z } from "zod";
 
+import { authMiddleware } from "./auth.js";
 import { config } from "./config.js";
-import { authMiddleware, createToken, hashPassword, verifyPassword } from "./auth.js";
-import {
-  createUser,
-  findUserById,
-  findUserByUsername,
-  normalizeUsername,
-  updateUserPassword,
-  updateUserVault
-} from "./store.js";
 import { decryptJson, encryptJson } from "./crypto.js";
+import { getThemePreferenceForUser, upsertThemePreferenceForUser } from "./preferences.js";
+import { findVaultRecordByUserId, upsertVaultRecord } from "./store.js";
 import { createDefaultVault, sanitizeVaultInput } from "./vault.js";
 
 const app = express();
@@ -30,130 +24,60 @@ app.use(
 
 app.use(express.json({ limit: "2mb" }));
 
+function firstZodIssue(schemaResult) {
+  if (schemaResult.success) {
+    return null;
+  }
+  const issue = schemaResult.error.issues[0];
+  const path = issue.path.length ? issue.path.join(".") : "body";
+  return `${path}: ${issue.message}`;
+}
+
+function parseBody(schema, req, res) {
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: firstZodIssue(parsed) || "Invalid request body" });
+  }
+  return parsed.data;
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "nerd-hub-backend", at: new Date().toISOString() });
 });
 
-const registerSchema = z.object({
-  username: z.string().min(3).max(30),
-  displayName: z.string().min(1).max(60).optional(),
-  password: z.string().min(8).max(120)
-});
-
-app.post("/api/auth/register", async (req, res) => {
-  try {
-    const body = registerSchema.parse(req.body);
-    const username = normalizeUsername(body.username);
-
-    if (!/^[a-z0-9_]+$/.test(username)) {
-      return res.status(400).json({ error: "Username must use letters, numbers, underscore" });
-    }
-
-    const existing = await findUserByUsername(username);
-    if (existing) {
-      return res.status(409).json({ error: "Username already exists" });
-    }
-
-    const passwordHash = await hashPassword(body.password);
-    const vault = createDefaultVault();
-    const encryptedVault = encryptJson(vault, config.encryptionSecret);
-
-    const user = await createUser({
-      username,
-      displayName: body.displayName || username,
-      passwordHash,
-      vault: encryptedVault
-    });
-
-    const token = createToken(user);
-
-    return res.status(201).json({
-      token,
-      user,
-      vault
-    });
-  } catch (error) {
-    return res.status(400).json({ error: "Invalid request" });
-  }
-});
-
-const loginSchema = z.object({
-  username: z.string().min(3).max(30),
-  password: z.string().min(8).max(120)
-});
-
-app.post("/api/auth/login", async (req, res) => {
-  try {
-    const body = loginSchema.parse(req.body);
-    const user = await findUserByUsername(body.username);
-
-    if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    const matches = await verifyPassword(body.password, user.passwordHash);
-    if (!matches) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    const vault = decryptJson(user.vault, config.encryptionSecret);
-    const token = createToken(user);
-
-    return res.json({
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        displayName: user.displayName,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      },
-      vault
-    });
-  } catch {
-    return res.status(400).json({ error: "Invalid request" });
-  }
-});
-
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(8).max(120),
-  nextPassword: z.string().min(8).max(120)
-});
-
-app.post("/api/auth/change-password", authMiddleware, async (req, res) => {
-  try {
-    const body = changePasswordSchema.parse(req.body);
-    const user = await findUserById(req.auth.userId);
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const matches = await verifyPassword(body.currentPassword, user.passwordHash);
-    if (!matches) {
-      return res.status(401).json({ error: "Current password invalid" });
-    }
-
-    const nextHash = await hashPassword(body.nextPassword);
-    await updateUserPassword(user.id, nextHash);
-
-    return res.json({ ok: true });
-  } catch {
-    return res.status(400).json({ error: "Invalid request" });
-  }
-});
-
 app.get("/api/vault", authMiddleware, async (req, res) => {
   try {
-    const user = await findUserById(req.auth.userId);
+    const preference = await getThemePreferenceForUser(req.auth.userId);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    const record = await findVaultRecordByUserId(req.auth.userId);
+    const themePreference =
+      preference?.themePreference === "light"
+        ? "light"
+        : "dark";
+    if (!record) {
+      const vault = createDefaultVault();
+      const encrypted = encryptJson(vault, config.encryptionSecret);
+      const saved = await upsertVaultRecord(req.auth.userId, encrypted);
+      if (!preference) {
+        await upsertThemePreferenceForUser(req.auth.userId, themePreference);
+      }
+      return res.json({ vault, updatedAt: saved.updatedAt, themePreference });
     }
 
-    const vault = decryptJson(user.vault, config.encryptionSecret);
-    return res.json({ vault, updatedAt: user.updatedAt });
-  } catch {
+    const vault = decryptJson(record.vault, config.encryptionSecret);
+    if (!preference) {
+      await upsertThemePreferenceForUser(req.auth.userId, themePreference);
+    }
+    return res.json({ vault, updatedAt: record.updatedAt, themePreference });
+  } catch (error) {
+    const message = String(error?.message || "");
+    if (message.startsWith("preferences_table_missing")) {
+      return res
+        .status(500)
+        .json({ error: "Supabase preferences table missing. Run migration for user_preferences." });
+    }
+    // eslint-disable-next-line no-console
+    console.error(error);
     return res.status(500).json({ error: "Failed to load vault" });
   }
 });
@@ -163,29 +87,96 @@ const saveVaultSchema = z.object({
 });
 
 app.put("/api/vault", authMiddleware, async (req, res) => {
+  const body = parseBody(saveVaultSchema, req, res);
+  if (!body) {
+    return;
+  }
+
   try {
-    const body = saveVaultSchema.parse(req.body);
     const sanitizedVault = sanitizeVaultInput(body.vault);
     const encrypted = encryptJson(sanitizedVault, config.encryptionSecret);
-
-    const user = await updateUserVault(req.auth.userId, encrypted);
-
-    return res.json({ ok: true, updatedAt: user.updatedAt });
+    const record = await upsertVaultRecord(req.auth.userId, encrypted);
+    return res.json({ ok: true, updatedAt: record.updatedAt });
   } catch (error) {
     const message = String(error?.message || "");
     if (message.startsWith("invalid_vault")) {
       return res.status(400).json({ error: message });
     }
+    // eslint-disable-next-line no-console
+    console.error(error);
+    return res.status(400).json({ error: "Invalid vault payload" });
+  }
+});
 
-    return res.status(400).json({ error: "Invalid request" });
+app.get("/api/user/preferences", authMiddleware, async (req, res) => {
+  try {
+    const existing = await getThemePreferenceForUser(req.auth.userId);
+    if (!existing) {
+      const created = await upsertThemePreferenceForUser(req.auth.userId, "dark");
+      return res.json({
+        themePreference: created.themePreference,
+        updatedAt: created.updatedAt
+      });
+    }
+
+    return res.json({
+      themePreference: existing.themePreference,
+      updatedAt: existing.updatedAt
+    });
+  } catch (error) {
+    const message = String(error?.message || "");
+    if (message.startsWith("preferences_table_missing")) {
+      return res
+        .status(500)
+        .json({ error: "Supabase preferences table missing. Run migration for user_preferences." });
+    }
+    // eslint-disable-next-line no-console
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load user preferences" });
+  }
+});
+
+const savePreferencesSchema = z.object({
+  themePreference: z.enum(["dark", "light"])
+});
+
+app.put("/api/user/preferences", authMiddleware, async (req, res) => {
+  const body = parseBody(savePreferencesSchema, req, res);
+  if (!body) {
+    return;
+  }
+
+  try {
+    const record = await upsertThemePreferenceForUser(req.auth.userId, body.themePreference);
+    return res.json({
+      ok: true,
+      themePreference: record.themePreference,
+      updatedAt: record.updatedAt
+    });
+  } catch (error) {
+    const message = String(error?.message || "");
+    if (message.startsWith("preferences_table_missing")) {
+      return res
+        .status(500)
+        .json({ error: "Supabase preferences table missing. Run migration for user_preferences." });
+    }
+    // eslint-disable-next-line no-console
+    console.error(error);
+    return res.status(500).json({ error: "Failed to update user preferences" });
   }
 });
 
 app.use((error, _req, res, _next) => {
+  if (error instanceof SyntaxError && "body" in error) {
+    return res.status(400).json({ error: "Invalid JSON body" });
+  }
+
   if (String(error?.message || "").includes("CORS")) {
     return res.status(403).json({ error: "CORS blocked" });
   }
 
+  // eslint-disable-next-line no-console
+  console.error(error);
   return res.status(500).json({ error: "Unhandled server error" });
 });
 

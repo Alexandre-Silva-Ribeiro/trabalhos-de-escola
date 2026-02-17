@@ -5,6 +5,8 @@ export type TimelineType = "mensagem" | "encontro" | "momento" | "sistema";
 export interface UserSummary {
   id: string;
   username: string;
+  email: string;
+  emailVerified?: boolean;
   displayName: string;
   createdAt: string;
   updatedAt: string;
@@ -77,9 +79,23 @@ export interface AuthPayload {
   token: string;
   user: UserSummary;
   vault: VaultData;
+  themePreference: ThemeMode;
+}
+
+export interface RegisterPayload {
+  ok: boolean;
+  needsVerification: boolean;
+  email: string;
+  message: string;
 }
 
 export interface VaultPayload {
   vault: VaultData;
+  updatedAt: string;
+  themePreference?: ThemeMode;
+}
+
+export interface UserPreferencesPayload {
+  themePreference: ThemeMode;
   updatedAt: string;
 }

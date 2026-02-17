@@ -1,4 +1,4 @@
-﻿import dotenv from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -10,9 +10,15 @@ function required(name, fallback = "") {
   return value;
 }
 
+const port = Number(process.env.PORT || 4000);
+
 export const config = {
-  port: Number(process.env.PORT || 4000),
+  port,
   frontendOrigin: process.env.FRONTEND_ORIGIN || "http://localhost:5173",
-  jwtSecret: required("JWT_SECRET", "dev-jwt-secret"),
-  encryptionSecret: required("ENCRYPTION_SECRET", "dev-encryption-secret")
+  encryptionSecret: required("ENCRYPTION_SECRET", "dev-encryption-secret"),
+  supabase: {
+    url: required("SUPABASE_URL", ""),
+    serviceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY", ""),
+    preferencesTable: process.env.SUPABASE_PREFERENCES_TABLE || "user_preferences"
+  }
 };
