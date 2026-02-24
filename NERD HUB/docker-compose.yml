@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nerdhub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nerdhub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - nerdhub_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nerdhub"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    container_name: nerdhub-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      FRONTEND_ORIGIN: http://localhost:5173
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:-change-this-32-char-encryption-key}
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-firebase}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-YOUR_FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:-}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY:-}
+      SUPABASE_URL: ${SUPABASE_URL:-https://YOUR_PROJECT_REF.supabase.co}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-YOUR_SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_PREFERENCES_TABLE: ${SUPABASE_PREFERENCES_TABLE:-user_preferences}
+      PREFERENCES_PROVIDER: ${PREFERENCES_PROVIDER:-sequelize}
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@postgres:5432/nerdhub}
+      DATABASE_SSL: "false"
+      DB_SYNC_ON_START: "false"
+      SEQUELIZE_PREFERENCES_TABLE: ${SEQUELIZE_PREFERENCES_TABLE:-user_preferences_local}
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: nerdhub-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:4000
+      VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-YOUR_FIREBASE_API_KEY}
+      VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-YOUR_PROJECT_ID.firebaseapp.com}
+      VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-YOUR_PROJECT_ID}
+      VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-YOUR_FIREBASE_APP_ID}
+      VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:-YOUR_PROJECT_ID.appspot.com}
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-YOUR_MESSAGING_SENDER_ID}
+    ports:
+      - "5173:5173"
+
+volumes:
+  nerdhub_pg_data:

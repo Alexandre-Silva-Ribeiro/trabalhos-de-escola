@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { getThemePreferenceForUserFromSequelize, upsertThemePreferenceForUserFromSequelize } from "./preferences.sequelize.js";
 import { supabaseAdmin } from "./supabase.js";
 
 function normalizeTheme(value) {
@@ -23,7 +24,11 @@ function toPreferencesTableError(error) {
   return new Error(`preferences_query_failed:${detail}`);
 }
 
-export async function getThemePreferenceForUser(userId) {
+async function getThemePreferenceForUserFromSupabase(userId) {
+  if (!supabaseAdmin) {
+    throw new Error("supabase_not_configured");
+  }
+
   const { data, error } = await supabaseAdmin
     .from(config.supabase.preferencesTable)
     .select("theme_preference, updated_at")
@@ -45,7 +50,11 @@ export async function getThemePreferenceForUser(userId) {
   };
 }
 
-export async function upsertThemePreferenceForUser(userId, themePreference) {
+async function upsertThemePreferenceForUserFromSupabase(userId, themePreference) {
+  if (!supabaseAdmin) {
+    throw new Error("supabase_not_configured");
+  }
+
   const now = new Date().toISOString();
   const nextTheme = normalizeTheme(themePreference);
   const { data, error } = await supabaseAdmin
@@ -72,4 +81,20 @@ export async function upsertThemePreferenceForUser(userId, themePreference) {
     themePreference: normalizeTheme(data.theme_preference),
     updatedAt: data.updated_at || now
   };
+}
+
+export async function getThemePreferenceForUser(userId) {
+  if (config.preferencesProvider === "sequelize") {
+    return getThemePreferenceForUserFromSequelize(userId);
+  }
+
+  return getThemePreferenceForUserFromSupabase(userId);
+}
+
+export async function upsertThemePreferenceForUser(userId, themePreference) {
+  if (config.preferencesProvider === "sequelize") {
+    return upsertThemePreferenceForUserFromSequelize(userId, themePreference);
+  }
+
+  return upsertThemePreferenceForUserFromSupabase(userId, themePreference);
 }

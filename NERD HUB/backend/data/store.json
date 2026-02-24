@@ -1,3 +1,15 @@
-﻿{
-  "users": []
+{
+  "vaults": [
+    {
+      "userId": "0c9bbac3-9b2a-4a3f-a493-0392a49260fb",
+      "vault": {
+        "iv": "BKuDmhQ3Ls/3aMeS",
+        "tag": "emW2fwJDNbn3uaimP0NAPw==",
+        "data": "MfuGWjDJwCDGqLDqM34A85JjCosDi/iSELEY5/TJ5tVh/Z3ZUclryWpLZiFNCjvoLuBZRxoX+Epd3j57W9Q/gUwP089xtd2/Wwfyn2XTYR71NQb6t08NgxRhOtBDUNOjH3DvhEvbSslDGiDJ+ZhhJ5Qp81jC5Ok8O3IBEiGh1r2tNL3ModbIdrSx0ZS3b7XDKQkKa2EvmZXYLl8BJCHVgmyCwp75TSou75y/cqzMumZ19Z8ZSvT4jfd5IL/aBe4KrL6xtv1PxiOpiQCHuD3jjrhCMzM90TGE/MQ25HPAFqQ4eT3k3LcwVUHaRZcoUoYgnpRcKt1qksxpJ/vaoO6pyTP509nJutbxX6okA4ezcPaqdCjUCNM17WGumO7aw95iBqTtQFTxeE5RIhGOGXyjWvPZ4HmyNIbgeurSiNZdVU/OJ4RlOwXMpu87AR64QMqaZGf0BipOj3A/7pJHEIVtmnFxAbrt/Z3IY3ewt9g0GLX4bgchuvgzpeDW1ALO2MOkPOuZzhxumhutXJMtqRlx3Pt9W/+jNhHMrLhMZn0eCytV6naXonJxBzALb2Ts9vHiuUk20+laZtsudWSsySKsFZvXWhdcaZeADSoq2svx6678GVFWN7JSuV7kUeLr6GwZJesjkZq5gqCkcnc9sKGuZadpqZwL+eTADVBzMFBrmRcCLKQCIW3uKqNwDlqk8GXZM+pAUQj6rE6Ugq+NX3A8qPjNd/U76AAazA0Of+o+FWnXLZZaBLlwVKY+P4b4XCkcbgpGWOIPQj647ZC3wXYmKNhXzLj0T0XO8+g11ZvY7sG672rDLo9GRJhxMp6zcRashnQ/4X3M5DpnR7xJpe1Pr0GOybgLKVoe4p/TN1fzpQzg4XRX2e2vjVCf9tFT36zqudbuFA8AOW/BxKZp4gcxGsRlcD8k7tQVEoCXQuILl6PKobZyI2BxKqtVAYlNztNqW4m8/EuB6C6INRh3OTWYixAiMtej3Lzw0VGMvZBmL5+KWLJUSC6zCOWcnfmll4FHaxhAJAskl1aMZmlD18AcavXSOF8XOzN8XOT8SD+AfiTXR5ShKEawdzfhYq1FN+umsiHnbsUPzxSe/hENPf4/j06YAMKo2xUzTUZw8IJWr5PY1XdWntu8BE5i60WhApZAnQUkOkYRf5oos0I="
+      },
+      "createdAt": "2026-02-17T17:17:58.498Z",
+      "updatedAt": "2026-02-17T19:53:06.112Z",
+      "themePreference": "dark"
+    }
+  ]
 }

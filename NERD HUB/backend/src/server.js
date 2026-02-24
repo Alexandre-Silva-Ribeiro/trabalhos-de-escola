@@ -5,6 +5,7 @@ import { z } from "zod";
 import { authMiddleware } from "./auth.js";
 import { config } from "./config.js";
 import { decryptJson, encryptJson } from "./crypto.js";
+import { getSequelizeHealth, initializeSequelize } from "./db/sequelize.js";
 import { getThemePreferenceForUser, upsertThemePreferenceForUser } from "./preferences.js";
 import { findVaultRecordByUserId, upsertVaultRecord } from "./store.js";
 import { createDefaultVault, sanitizeVaultInput } from "./vault.js";
@@ -43,6 +44,15 @@ function parseBody(schema, req, res) {
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "nerd-hub-backend", at: new Date().toISOString() });
+});
+
+app.get("/api/health/db", async (_req, res) => {
+  const status = await getSequelizeHealth();
+  res.json({
+    ok: status.ready,
+    ...status,
+    provider: config.preferencesProvider
+  });
 });
 
 app.get("/api/vault", authMiddleware, async (req, res) => {
@@ -180,7 +190,16 @@ app.use((error, _req, res, _next) => {
   return res.status(500).json({ error: "Unhandled server error" });
 });
 
+if (config.preferencesProvider === "sequelize") {
+  initializeSequelize().catch((error) => {
+    // eslint-disable-next-line no-console
+    console.error("Failed to initialize Sequelize:", error);
+  });
+}
+
 app.listen(config.port, () => {
   // eslint-disable-next-line no-console
-  console.log(`NERD HUB backend running at http://localhost:${config.port}`);
+  console.log(
+    `NERD HUB backend running at http://localhost:${config.port} (preferences: ${config.preferencesProvider})`
+  );
 });

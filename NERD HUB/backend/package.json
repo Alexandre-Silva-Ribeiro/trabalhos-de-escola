@@ -5,13 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "lint": "biome check src",
+    "format": "biome format --write src",
+    "db:migrate": "sequelize-cli db:migrate --config sequelize.config.cjs --migrations-path src/db/migrations",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo --config sequelize.config.cjs --migrations-path src/db/migrations"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.2",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
+    "firebase-admin": "^12.7.0",
+    "pg": "^8.13.1",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.5",
     "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "sequelize-cli": "^6.6.2"
   }
 }
