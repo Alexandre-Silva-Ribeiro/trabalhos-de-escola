@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 172" role="img" aria-label="Cozinha isométrica">
+  <defs>
+    <linearGradient id="chao" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f0b968"/>
+      <stop offset="100%" stop-color="#cc803f"/>
+    </linearGradient>
+    <linearGradient id="parede" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7d39e"/>
+      <stop offset="100%" stop-color="#e2b67d"/>
+    </linearGradient>
+    <linearGradient id="madeira" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d1884e"/>
+      <stop offset="100%" stop-color="#9e5f33"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="172" fill="#f7d39e"/>
+  <polygon points="0,86 128,20 256,86 128,152" fill="url(#chao)" opacity="0.92"/>
+  <polygon points="0,0 128,0 128,84 0,150" fill="url(#parede)" opacity="0.85"/>
+  <polygon points="256,0 128,0 128,84 256,150" fill="#f2c58d" opacity="0.85"/>
+
+  <polygon points="22,56 58,40 58,108 22,124" fill="#8cc6bd"/>
+  <polygon points="58,40 76,48 76,116 58,108" fill="#6ca89e"/>
+  <polygon points="22,56 58,40 76,48 40,64" fill="#a5ddd4"/>
+
+  <polygon points="74,62 150,24 182,40 106,78" fill="url(#madeira)"/>
+  <polygon points="106,78 182,40 182,104 106,142" fill="#86502f"/>
+  <polygon points="74,62 106,78 106,142 74,126" fill="#b47042"/>
+
+  <polygon points="112,84 156,62 168,68 124,90" fill="#90c7da"/>
+  <polygon points="124,90 168,68 168,92 124,114" fill="#5f8da2"/>
+  <polygon points="112,84 124,90 124,114 112,108" fill="#7bb0c4"/>
+
+  <polygon points="170,58 214,36 230,44 186,66" fill="#cf8450"/>
+  <polygon points="186,66 230,44 230,90 186,112" fill="#9a5f3a"/>
+  <polygon points="170,58 186,66 186,112 170,104" fill="#b87344"/>
+
+  <polygon points="148,118 198,92 230,108 180,134" fill="#cb8250"/>
+  <polygon points="180,134 230,108 230,154 180,172" fill="#9a603c"/>
+  <polygon points="148,118 180,134 180,172 148,156" fill="#b37245"/>
+
+  <polygon points="120,126 150,112 178,126 148,140" fill="#d99357"/>
+  <polygon points="148,140 178,126 178,164 148,172" fill="#8f5835"/>
+  <polygon points="120,126 148,140 148,172 120,158" fill="#b87143"/>
+
+  <rect x="18" y="22" width="24" height="22" fill="#ce894f"/>
+  <rect x="214" y="18" width="26" height="24" fill="#d6935a"/>
+  <circle cx="30" cy="33" r="4" fill="#9b5d37"/>
+  <circle cx="226" cy="30" r="4" fill="#9b5d37"/>
+
+  <rect x="191" y="48" width="24" height="16" fill="#9ec7db"/>
+  <rect x="196" y="52" width="14" height="8" fill="#5d8098"/>
+
+  <ellipse cx="146" cy="101" rx="10" ry="6" fill="#744830"/>
+  <ellipse cx="167" cy="111" rx="12" ry="7" fill="#744830"/>
+  <ellipse cx="158" cy="130" rx="12" ry="7" fill="#7c4d33"/>
+</svg>
