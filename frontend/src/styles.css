@@ -12,15 +12,16 @@
   --border: #d8dee6;
   --border-strong: #b7c0cc;
   --shadow: rgba(16, 28, 44, 0.08);
-  --brand: #bf1e2e;
-  --brand-soft: #fcecee;
+  --brand: #b11b2a;
+  --brand-soft: #ffffff;
   --button-bg: #f4f6f8;
   --button-hover: #e8edf3;
   --button-text: #1e2d3c;
-  --danger: #8f2f37;
+  --danger: #b11b2a;
   --banner-line: #dee4eb;
-  --link: #1b4f8f;
-  --link-hover: #133a68;
+  --link: #b11b2a;
+  --link-hover: #861421;
+  --on-brand: #ffffff;
   --footer-bg: #191d23;
   --footer-surface: #222831;
   --footer-text: #dce2eb;
@@ -41,15 +42,16 @@
   --border: #324050;
   --border-strong: #536273;
   --shadow: rgba(0, 0, 0, 0.4);
-  --brand: #ee4255;
-  --brand-soft: #3c2328;
+  --brand: #ffffff;
+  --brand-soft: #2a3442;
   --button-bg: #25303c;
   --button-hover: #2f3b4a;
   --button-text: #f0f5fb;
-  --danger: #ff9ea7;
+  --danger: #ffffff;
   --banner-line: #2f3a47;
-  --link: #8bbaf3;
-  --link-hover: #b7d4f7;
+  --link: #f2f6fd;
+  --link-hover: #ffffff;
+  --on-brand: #10161e;
   --footer-bg: #0f1318;
   --footer-surface: #171d25;
   --footer-text: #d4dce8;
@@ -108,7 +110,7 @@ a:hover {
   content: "";
   display: block;
   height: 4px;
-  background: linear-gradient(90deg, #73000a 0%, var(--brand) 40%, #d63346 100%);
+  background: linear-gradient(90deg, var(--brand) 0%, var(--brand) 100%);
 }
 
 .header-bar {
@@ -201,12 +203,12 @@ a:hover {
 
 .header-action-button:hover:not(:disabled) {
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
 .header-action-button[aria-current="page"] {
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
 .header-action-button:disabled {

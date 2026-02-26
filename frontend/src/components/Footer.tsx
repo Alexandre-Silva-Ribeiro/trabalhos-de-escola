@@ -1,9 +1,5 @@
 import { Link } from "react-router-dom";
 
-interface FooterProps {
-  projectName: string;
-}
-
 const secondaryNavItems: ReadonlyArray<{ label: string; to: string }> = [
   { label: "Homenagens", to: "/mulheres-na-engenharia" },
   { label: "Fontes da Pesquisa", to: "/fontes" },
@@ -16,7 +12,7 @@ const externalItems: ReadonlyArray<{ label: string; href: string }> = [
   { label: "Revista ABPN", href: "https://abpnrevista.org.br/site/" }
 ];
 
-export default function Footer({ projectName }: FooterProps) {
+export default function Footer() {
   return (
     <footer id="fontes" className="site-footer">
       <div className="footer-main">
@@ -55,8 +51,8 @@ export default function Footer({ projectName }: FooterProps) {
       </div>
 
       <p className="footer-bottom">
-        {projectName} - projeto escolar independente, sem vínculo institucional
-        oficial com associações profissionais.
+        Projeto escolar independente, sem vínculo institucional oficial com
+        associações profissionais.
       </p>
     </footer>
   );

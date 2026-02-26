@@ -5,8 +5,6 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import type { Biography, FloatingProfile } from "./types";
 
-const projectName = "Enciclopédia Brasileira de Engenharia";
-
 const floatingProfile: FloatingProfile = {
   fullName: "Enedina Alves Marques",
   dates: "1913-1981",
@@ -92,7 +90,7 @@ export default function App() {
 
       <AppRoutes biography={biography} error={error} profile={floatingProfile} />
 
-      <Footer projectName={projectName} />
+      <Footer />
     </div>
   );
 }
