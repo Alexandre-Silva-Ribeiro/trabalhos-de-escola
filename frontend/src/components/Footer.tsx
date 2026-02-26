@@ -55,8 +55,8 @@ export default function Footer({ projectName }: FooterProps) {
       </div>
 
       <p className="footer-bottom">
-        {"\u00A9"} 2026 {projectName} - Resgatando a história das mulheres na
-        ciência.
+        {projectName} - projeto escolar independente, sem vínculo institucional
+        oficial com associações profissionais.
       </p>
     </footer>
   );

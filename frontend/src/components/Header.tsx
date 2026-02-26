@@ -5,6 +5,11 @@ type ScrollTarget = "top" | "biografias";
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isHomeRoute = location.pathname === "/";
+
+  function isRouteActive(path: string) {
+    return location.pathname === path;
+  }
 
   function scrollOnHome(target: ScrollTarget) {
     if (target === "top") {
@@ -39,7 +44,11 @@ export default function Header() {
         <nav className="header-nav-shell" aria-label="Navegação principal">
           <ul className="header-nav">
             <li>
-              <button type="button" onClick={() => goToHomeAndScroll("top")}>
+              <button
+                type="button"
+                onClick={() => goToHomeAndScroll("top")}
+                aria-current={isHomeRoute ? "page" : undefined}
+              >
                 Início
               </button>
             </li>
@@ -47,6 +56,7 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => goToHomeAndScroll("biografias")}
+                aria-current={isHomeRoute ? "page" : undefined}
               >
                 Biografias
               </button>
@@ -55,12 +65,19 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => goToRoute("/mulheres-na-engenharia")}
+                aria-current={
+                  isRouteActive("/mulheres-na-engenharia") ? "page" : undefined
+                }
               >
                 Mulheres na Engenharia
               </button>
             </li>
             <li>
-              <button type="button" onClick={() => goToRoute("/fontes")}>
+              <button
+                type="button"
+                onClick={() => goToRoute("/fontes")}
+                aria-current={isRouteActive("/fontes") ? "page" : undefined}
+              >
                 Fontes
               </button>
             </li>
@@ -72,6 +89,7 @@ export default function Header() {
             type="button"
             className="header-action-button"
             onClick={() => goToRoute("/sobre")}
+            aria-current={isRouteActive("/sobre") ? "page" : undefined}
           >
             Sobre o Criador
           </button>
