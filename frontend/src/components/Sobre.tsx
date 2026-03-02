@@ -18,6 +18,7 @@ export default function Sobre() {
         <div className="creator-meta">
           <p>Turma: 2008</p>
           <p>Turno: Noite</p>
+          <p>Aluno do Colégio Estadual Olavo Bilac</p>
         </div>
         {aboutParagraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>

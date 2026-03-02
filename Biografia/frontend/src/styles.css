@@ -784,21 +784,44 @@ a:hover {
 
 @media (max-width: 900px) {
   .header-bar {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     row-gap: 0.55rem;
   }
 
   .header-spacer {
-    grid-column: 1 / 2;
+    display: none;
   }
 
   .header-nav-shell {
     grid-column: 1 / -1;
+    overflow: visible;
+  }
+
+  .header-nav {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.45rem 0.7rem;
+    min-width: 0;
   }
 
   .header-actions {
-    grid-column: 2 / 3;
-    align-self: start;
+    grid-column: 1 / -1;
+    justify-self: start;
+    align-self: center;
+  }
+
+  .header-action-button {
+    min-height: 2rem;
+    padding: 0.32rem 0.68rem;
+  }
+
+  .theme-toggle {
+    top: calc(env(safe-area-inset-top, 0px) + 0.55rem);
+    right: 0.75rem;
+    bottom: auto;
+    width: 2.55rem;
+    height: 2.55rem;
+    font-size: 1rem;
   }
 
   .institutional-points {
@@ -836,6 +859,8 @@ a:hover {
   }
 
   .footer-block {
+    flex: initial;
+    min-width: 0;
     border-left: 0;
     border-top: 1px solid var(--footer-border);
     padding-top: 0.85rem;
@@ -876,10 +901,11 @@ a:hover {
   }
 
   .theme-toggle {
-    right: 0.9rem;
-    bottom: 0.9rem;
-    width: 2.8rem;
-    height: 2.8rem;
+    top: calc(env(safe-area-inset-top, 0px) + 0.45rem);
+    right: 0.68rem;
+    bottom: auto;
+    width: 2.45rem;
+    height: 2.45rem;
   }
 
   .footer-main {

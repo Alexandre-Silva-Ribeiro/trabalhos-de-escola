@@ -1,4 +1,4 @@
-﻿const aboutParagraphs: ReadonlyArray<string> = [
+const aboutParagraphs: ReadonlyArray<string> = [
   "Comecei com programação aos 11 anos, movido principalmente por curiosidade. Gostava de abrir coisas, testar, entender como funcionavam por dentro. Não era nada planejado, apenas vontade de explorar. Depois de um tempo, parei, mas aos 14 voltei a experimentar outras áreas até perceber, aos 15, que programar realmente prendia minha atenção. Quando estou programando, o tempo passa sem que eu perceba, e me faz sentir produtivo e focado.",
   "A programação me ajuda a organizar meus pensamentos. Minha mente costuma estar cheia de ideias, e escrever código é uma forma de colocar ordem nelas. Gosto da sensação de resolver problemas por conta própria e de ver algo funcionando a partir de algo que eu mesmo construí. Nem sempre dá certo de primeira, mas aprender com os erros faz parte do processo.",
   "Crio coisas úteis, planejadas, organizadas, automatizadas, mas também crio coisas inúteis só para me desafiar. Quando algo funciona, fico satisfeito, mesmo que eu nem vá usar, e não preciso mostrar a ninguém além de mim mesmo. Pequenos avanços já bastam. Experimentos falham direto, e tudo bem. Faz parte. Aprender com cada tentativa, mesmo sem resultado aparente, virou rotina. Pequenas derrotas não são fracassos, apenas mostram onde ainda posso melhorar.",
@@ -18,6 +18,7 @@ export default function Sobre() {
         <div className="creator-meta">
           <p>Turma: 2008</p>
           <p>Turno: Noite</p>
+          <p>Aluno do Colégio Estadual Olavo Bilac</p>
         </div>
         {aboutParagraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
