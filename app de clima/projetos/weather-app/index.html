@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-day-clear">
+  <main class="card">
+    <h1>Weather App</h1>
+    <form id="weatherForm" class="search">
+      <input id="cityInput" type="text" placeholder="Enter city name" />
+      <button type="submit">Search</button>
+    </form>
+    <p id="status" class="status"></p>
+    <div id="matches" class="matches hidden"></div>
+
+    <section id="result" class="result hidden">
+      <div class="block">
+        <p class="label">Location</p>
+        <p id="location"></p>
+      </div>
+
+      <div class="time-grid">
+        <div class="block">
+          <p class="label">Date</p>
+          <p id="dateText"></p>
+        </div>
+        <div class="block">
+          <p class="label">Time</p>
+          <p id="timeText"></p>
+        </div>
+      </div>
+
+      <div class="weather-main">
+        <img id="icon" alt="Weather icon" />
+        <div>
+          <p id="temp"></p>
+          <p id="desc"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portifolio</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(160deg, #eef5ff, #dfeeff);
+      color: #1f2937;
+      padding: 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0 0 18px;
+      color: #4b5563;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 16px;
+      font-size: 16px;
+      color: #fff;
+      background: #2563eb;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .projects {
+      margin-top: 14px;
+      text-align: left;
+      max-height: 300px;
+      overflow: hidden;
+      transition: max-height 0.25s ease, opacity 0.25s ease;
+      opacity: 1;
+    }
+
+    .projects.hidden {
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    a {
+      display: block;
+      padding: 10px 12px;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #1e3a8a;
+      background: #f8fbff;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    a:hover {
+      background: #eef4ff;
+      border-color: #93c5fd;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Meu Portifolio</h1>
+    <p>Projetos desenvolvidos com HTML, CSS e JavaScript.</p>
+
+    <button id="toggleProjects" type="button" aria-expanded="false">Meus Projetos</button>
+
+    <div id="projectList" class="projects hidden">
+      <ul>
+        <li><a href="projetos/weather-app/index.html">Weather App</a></li>
+      </ul>
+    </div>
+  </main>
+
+  <script>
+    const button = document.getElementById("toggleProjects");
+    const projectList = document.getElementById("projectList");
+
+    button.addEventListener("click", () => {
+      const isHidden = projectList.classList.toggle("hidden");
+      button.setAttribute("aria-expanded", String(!isHidden));
+    });
+  </script>
+</body>
+</html>
