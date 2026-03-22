@@ -1,0 +1,173 @@
+﻿:root {
+  --page-bg-start: #f2f4f6;
+  --page-bg-end: #e3e8ee;
+  --panel-bg: #ffffff;
+  --text-main: #1b2129;
+  --text-muted: #55606d;
+  --border: #c7d0d9;
+  --accent: #2a647d;
+  --accent-strong: #1e4f64;
+  --idle-area: #eef2f5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  color: var(--text-main);
+  background: linear-gradient(160deg, var(--page-bg-start), var(--page-bg-end));
+  font-family: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
+}
+
+.app {
+  width: min(900px, 95vw);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+  box-shadow: 0 8px 28px rgba(16, 28, 38, 0.08);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+  letter-spacing: 0.02em;
+}
+
+.header p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
+.hud {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  min-width: 140px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #f7f9fb;
+  display: grid;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+#time-left {
+  font-variant-numeric: tabular-nums;
+}
+
+#time-left.is-critical {
+  color: #93242a;
+}
+
+#start-btn {
+  width: fit-content;
+  border: 1px solid var(--accent-strong);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+#start-btn:hover:enabled {
+  background: var(--accent-strong);
+}
+
+#start-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+#game-area {
+  position: relative;
+  width: 100%;
+  height: clamp(280px, 42vh, 460px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--idle-area);
+  overflow: hidden;
+}
+
+#hint {
+  margin: 0;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  padding: 12px;
+  text-align: center;
+}
+
+.target {
+  position: absolute;
+  width: 74px;
+  height: 74px;
+  border: 1px solid #4a5967;
+  border-radius: 8px;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  font: 700 0.95rem/1 "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
+  letter-spacing: 0.04em;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+}
+
+.target img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.status {
+  margin: 0;
+  color: var(--text-muted);
+  min-height: 24px;
+}
+
+.status.is-danger {
+  color: #93242a;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 18px;
+  }
+
+  .stat-card {
+    flex: 1;
+  }
+
+  .target {
+    width: 68px;
+    height: 68px;
+  }
+}

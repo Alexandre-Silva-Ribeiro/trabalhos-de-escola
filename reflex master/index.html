@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR" data-reflex-version="v8">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reflex Master</title>
+    <link rel="stylesheet" href="style.css?v=8" />
+  </head>
+  <body>
+    <main class="app" aria-label="Jogo Reflex Master">
+      <header class="header">
+        <h1>Reflex Master</h1>
+        <p>Clique no sticker antes do tempo acabar.</p>
+      </header>
+
+      <section class="hud" aria-label="Painel do jogo">
+        <div class="stat-card">
+          <span class="stat-label">Pontuacao</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Recorde</span>
+          <strong id="high-score">0</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Tempo</span>
+          <strong id="time-left">1.40s</strong>
+        </div>
+      </section>
+
+      <button id="start-btn" type="button" onclick="if (typeof window.startGame === 'function') window.startGame();">
+        Iniciar jogo
+      </button>
+
+      <section id="game-area" aria-live="polite">
+        <p id="hint">Pressione "Iniciar jogo" para comecar.</p>
+      </section>
+
+      <p id="status" class="status">Pronto para testar seu reflexo.</p>
+    </main>
+
+    <script src="script.js?v=8" defer></script>
+  </body>
+</html>
