@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import AppRoutes from "./Routes";
 import { apiUrl } from "./apiBase";
 import Footer from "./components/Footer";
@@ -8,7 +8,7 @@ import type { Biography, FloatingProfile } from "./types";
 const floatingProfile: FloatingProfile = {
   fullName: "Enedina Alves Marques",
   dates: "1913-1981",
-  quote: "Competência técnica também é um ato de justiça social.",
+  quote: "Ela provou, na prática, que talento não tem cor nem gênero.",
   portrait: "https://plenarinho.leg.br/wp-content/uploads/2023/09/Enedina-Alves-Marques.jpg"
 };
 
@@ -37,20 +37,21 @@ export default function App() {
   useEffect(() => {
     async function loadBiography() {
       try {
-        const apiResponse = await fetch(apiUrl("/api/biography"));
-        if (apiResponse.ok) {
-          const apiData: Biography = await apiResponse.json();
-          setBiography(apiData);
+        const staticUrl = `${import.meta.env.BASE_URL}biography.json?v=${Date.now()}`;
+        const staticResponse = await fetch(staticUrl, { cache: "no-store" });
+        if (staticResponse.ok) {
+          const staticData: Biography = await staticResponse.json();
+          setBiography(staticData);
           return;
         }
 
-        const staticResponse = await fetch(`${import.meta.env.BASE_URL}biography.json`);
-        if (!staticResponse.ok) {
-          throw new Error("Não foi possível carregar a biografia.");
+        const apiResponse = await fetch(apiUrl("/api/biography"), { cache: "no-store" });
+        if (!apiResponse.ok) {
+          throw new Error("Nao foi possivel carregar a biografia.");
         }
 
-        const staticData: Biography = await staticResponse.json();
-        setBiography(staticData);
+        const apiData: Biography = await apiResponse.json();
+        setBiography(apiData);
       } catch (loadError) {
         const message =
           loadError instanceof Error ? loadError.message : "Erro inesperado.";

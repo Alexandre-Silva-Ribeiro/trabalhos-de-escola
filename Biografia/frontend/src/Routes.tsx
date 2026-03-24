@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import {
   Navigate,
   Route,
@@ -21,7 +21,7 @@ interface AppRoutesProps {
 }
 
 type HomeNavigationState = {
-  scrollTo?: "top" | "biografias";
+  scrollTo?: "top";
 };
 
 interface HomePageProps {
@@ -40,28 +40,16 @@ function HomePage({ biography, error, profile }: HomePageProps) {
       return;
     }
 
-    if (state.scrollTo === "top") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      navigate(location.pathname, { replace: true, state: null });
-      return;
-    }
-
-    if (!biography) {
-      return;
-    }
-
-    document
-      .getElementById("biografias")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
     navigate(location.pathname, { replace: true, state: null });
-  }, [biography, location.pathname, location.state, navigate]);
+  }, [location.pathname, location.state, navigate]);
 
   if (error) {
     return <p className="status-message">Erro: {error}</p>;
   }
 
   if (!biography) {
-    return <p className="status-message">Carregando conteúdo biográfico...</p>;
+    return <p className="status-message">Carregando a historia...</p>;
   }
 
   return (

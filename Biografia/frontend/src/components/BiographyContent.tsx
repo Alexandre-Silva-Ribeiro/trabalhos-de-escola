@@ -1,7 +1,9 @@
-import type { Biography, BiographySection } from "../types";
+﻿import type { Biography, BiographySection, FloatingProfile } from "../types";
+import FloatingCard from "./FloatingCard";
 
 interface BiographyContentProps {
   biography: Biography;
+  profile: FloatingProfile;
 }
 
 function renderSection(section: BiographySection, index: number, imageIndex: number) {
@@ -14,7 +16,8 @@ function renderSection(section: BiographySection, index: number, imageIndex: num
     );
   }
 
-  if (section.content === "Contribuições e Impacto Social") {
+  const contentLower = section.content.toLowerCase();
+  if (contentLower.includes("contribu") && contentLower.includes("impacto social")) {
     return (
       <h2 key={`section-${index}`} className="impact-title">
         {section.content}
@@ -25,12 +28,15 @@ function renderSection(section: BiographySection, index: number, imageIndex: num
   return <p key={`section-${index}`}>{section.content}</p>;
 }
 
-export default function BiographyContent({ biography }: BiographyContentProps) {
+export default function BiographyContent({ biography, profile }: BiographyContentProps) {
   let imageCounter = 0;
 
   return (
     <article className="biography-article">
       <h1>{biography.title}</h1>
+      <div className="mobile-floating-wrapper">
+        <FloatingCard profile={profile} />
+      </div>
       <p className="intro">{biography.intro}</p>
 
       {biography.sections.map((section, index) => {
@@ -41,7 +47,7 @@ export default function BiographyContent({ biography }: BiographyContentProps) {
         return node;
       })}
 
-      {/* Garante que elementos flutuantes não vazem para fora do artigo. */}
+      {/* Evita vazamento de elementos flutuantes para fora do artigo. */}
       <div className="clear-floats" />
     </article>
   );

@@ -1,12 +1,12 @@
-export default function SobreProjeto() {
+﻿export default function SobreProjeto() {
   return (
     <section className="route-page">
       <article className="route-page-card">
         <h1>Sobre o Projeto</h1>
         <p>
-          Fiz esse projeto como desafio próprio e também para completar um
-          trabalho escolar solicitado pelo Colégio Estadual Olavo Bilac de
-          Resende-RJ.
+          Este projeto começou como trabalho escolar e virou um desafio pessoal.
+          A ideia foi simples: contar a história da Enedina de um jeito mais
+          humano, mais direto e mais gostoso de ler.
         </p>
       </article>
     </section>
