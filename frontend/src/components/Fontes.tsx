@@ -1,10 +1,10 @@
-const sourceLinks: ReadonlyArray<{ label: string; href: string }> = [
+﻿const sourceLinks: ReadonlyArray<{ label: string; href: string }> = [
   {
     label: "Wikipedia - Enedina Alves Marques",
     href: "https://pt.wikipedia.org/wiki/Enedina_Alves_Marques"
   },
   {
-    label: "UFPR - Primeira engenheira negra do país",
+    label: "UFPR - Homenagem a Enedina",
     href: "https://ufpr.br/primeira-engenheira-negra-do-pais-e-formada-pela-ufpr-recebe-homenagem-do-google/"
   },
   {
@@ -21,10 +21,10 @@ export default function Fontes() {
   return (
     <section className="route-page">
       <article className="route-page-card">
-        <h1>Fontes</h1>
+        <h1>Fontes e referências</h1>
         <p>
-          Referências utilizadas para consulta biográfica e contextualização
-          histórica.
+          Se você quiser conferir de onde veio cada informação, está tudo aqui.
+          Transparência total.
         </p>
         <ul className="sources-list">
           {sourceLinks.map((source) => (

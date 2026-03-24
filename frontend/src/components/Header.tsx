@@ -1,30 +1,29 @@
+﻿import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-type ScrollTarget = "top" | "biografias";
+type ScrollTarget = "top";
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHomeRoute = location.pathname === "/";
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   function isRouteActive(path: string) {
     return location.pathname === path;
   }
 
-  function scrollOnHome(target: ScrollTarget) {
-    if (target === "top") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    document
-      .getElementById("biografias")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  function scrollOnHome() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function goToHomeAndScroll(target: ScrollTarget) {
     if (location.pathname === "/") {
-      scrollOnHome(target);
+      scrollOnHome();
       return;
     }
 
@@ -34,6 +33,11 @@ export default function Header() {
   function goToRoute(path: string) {
     navigate(path);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function runMobileAction(action: () => void) {
+    action();
+    setIsMobileMenuOpen(false);
   }
 
   return (
@@ -50,15 +54,6 @@ export default function Header() {
                 aria-current={isHomeRoute ? "page" : undefined}
               >
                 Início
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => goToHomeAndScroll("biografias")}
-                aria-current={isHomeRoute ? "page" : undefined}
-              >
-                Biografias
               </button>
             </li>
             <li>
@@ -94,18 +89,74 @@ export default function Header() {
             Sobre o Criador
           </button>
         </div>
+
+        <button
+          type="button"
+          className="menu-toggle"
+          aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-menu"
+          onClick={() => setIsMobileMenuOpen((current) => !current)}
+        >
+          ☰
+        </button>
+
+        <div
+          id="mobile-menu"
+          className={`header-mobile-menu ${isMobileMenuOpen ? "active" : ""}`}
+        >
+          <ul className="header-mobile-nav">
+            <li>
+              <button
+                type="button"
+                onClick={() => runMobileAction(() => goToHomeAndScroll("top"))}
+                aria-current={isHomeRoute ? "page" : undefined}
+              >
+                Início
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => runMobileAction(() => goToRoute("/mulheres-na-engenharia"))}
+                aria-current={
+                  isRouteActive("/mulheres-na-engenharia") ? "page" : undefined
+                }
+              >
+                Mulheres na Engenharia
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => runMobileAction(() => goToRoute("/fontes"))}
+                aria-current={isRouteActive("/fontes") ? "page" : undefined}
+              >
+                Fontes
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => runMobileAction(() => goToRoute("/sobre"))}
+                aria-current={isRouteActive("/sobre") ? "page" : undefined}
+              >
+                Sobre o Criador
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <div className="institutional-banner">
         <h2 className="institutional-title">
-          Enedina Alves Marques: Primeira Engenheira Negra do Brasil e Primeira
-          Engenheira do Sul do País
+          Enedina Alves Marques: uma pioneira que abriu caminho na engenharia
         </h2>
         <ul className="institutional-points">
-          <li>Formada em Engenharia Civil pela UFPR (1945)</li>
-          <li>Líder na construção da Usina Hidrelétrica Capivari-Cachoeira</li>
+          <li>Formada em Engenharia Civil pela UFPR, em 1945</li>
+          <li>Primeira mulher negra engenheira do Brasil</li>
+          <li>Primeira engenheira do Sul do país</li>
           <li>Conhecida como "A Dama do Capivari"</li>
-          <li>Nascida em Curitiba, Paraná</li>
         </ul>
       </div>
     </header>

@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 
 const secondaryNavItems: ReadonlyArray<{ label: string; to: string }> = [
-  { label: "Homenagens", to: "/mulheres-na-engenharia" },
-  { label: "Fontes da Pesquisa", to: "/fontes" },
+  { label: "Mulheres na Engenharia", to: "/mulheres-na-engenharia" },
+  { label: "Fontes", to: "/fontes" },
   { label: "Sobre o Projeto", to: "/sobre-projeto" }
 ];
 
@@ -18,15 +18,15 @@ export default function Footer() {
       <div className="footer-main">
         <section className="footer-block">
           <h2>Enedina Alves Marques (1913-1981)</h2>
-          <p>Primeira Engenheira Negra do Brasil (Formada em 1945 pela UFPR)</p>
+          <p>Primeira mulher negra engenheira do Brasil, formada em 1945 pela UFPR.</p>
           <p className="footer-legacy-line">
-            Legado: Construção da Usina Capivari-Cachoeira | Pioneira em Obras
-            Públicas | Referência em Engenharia no Paraná
+            O legado dela passa por obras de infraestrutura no Paraná e pela
+            abertura de caminho para novas gerações na engenharia.
           </p>
         </section>
 
         <nav className="footer-block" aria-label="Navegação secundária">
-          <h2>Navegação secundária</h2>
+          <h2>Navegação rápida</h2>
           <ul>
             {secondaryNavItems.map((item) => (
               <li key={item.label}>
@@ -51,8 +51,8 @@ export default function Footer() {
       </div>
 
       <p className="footer-bottom">
-        Projeto escolar independente, sem vínculo institucional oficial com
-        associações profissionais.
+        Projeto escolar independente, feito para valorizar a história da Enedina
+        com respeito e base em fontes públicas.
       </p>
     </footer>
   );

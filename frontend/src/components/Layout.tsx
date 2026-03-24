@@ -11,7 +11,7 @@ export default function Layout({ biography, profile }: LayoutProps) {
   return (
     <main className="page-grid">
       <section className="main-column">
-        <BiographyContent biography={biography} />
+        <BiographyContent biography={biography} profile={profile} />
       </section>
       {/* Coluna lateral mantida separada para facilitar o modo responsivo. */}
       <aside className="side-column">

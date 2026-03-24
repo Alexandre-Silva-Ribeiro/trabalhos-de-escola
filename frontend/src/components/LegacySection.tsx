@@ -1,28 +1,22 @@
-export default function LegacySection() {
+﻿export default function LegacySection() {
   return (
     <section id="mulheres-na-engenharia" className="legacy-section">
       <div className="legacy-grid">
         <div className="legacy-copy">
-          <p className="legacy-kicker">Legado e Reconhecimento</p>
+          <p className="legacy-kicker">Legado e reconhecimento</p>
           <p>
-            A memória pública de Enedina Alves Marques ganhou novas camadas ao
-            longo das últimas décadas. Em Curitiba, sua estátua na Rua XV de
-            Novembro transformou um espaço de circulação intensa em ponto de
-            referência histórica, reforçando a presença de uma engenheira negra
-            no imaginário urbano. Sua trajetória também aparece em acervos como
-            o Museu de Astronomia e Ciências Afins (MAST), que ajuda a
-            preservar documentos e narrativas ligadas à ciência e à tecnologia
-            no Brasil. Esse reconhecimento não é apenas simbólico: ele sustenta
-            mudanças institucionais na formação de engenheiras e engenheiros,
-            amplia repertórios de pertencimento e fortalece políticas de
-            inclusão em cursos e conselhos profissionais.
+            Com o passar dos anos, a história da Enedina começou a ocupar o
+            espaço que sempre mereceu. Em Curitiba, a estátua dela na Rua XV
+            lembra todo mundo que uma mulher negra também ajudou a construir a
+            engenharia brasileira. E sim, isso importa muito. Quando essa
+            memória circula, mais pessoas se enxergam nesse caminho.
           </p>
         </div>
         <aside className="legacy-quote">
-          <p className="legacy-quote-label">Memória institucional</p>
+          <p className="legacy-quote-label">Memória viva</p>
           <blockquote>
-            "Preservar a história de Enedina é ampliar o horizonte de quem
-            entra hoje na engenharia brasileira."
+            "Guardar a história de Enedina é abrir caminho para quem sonha em
+            entrar na engenharia hoje."
           </blockquote>
         </aside>
       </div>
